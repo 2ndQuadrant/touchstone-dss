@@ -37,6 +37,11 @@ tearDown() {
 	assertEquals "drop tables" 0 $?
 }
 
+testPgsqlLoadStoreTable() {
+	$PSQL -c "COPY store FROM '$PGDATA/store.data';"
+	assertEquals "COPY" 0 $?
+}
+
 testPgsqlLoadTimeTable() {
 	COUNT=`wc -l $PGDATA/time.data | cut -f 1 -d " "`
 	assertEquals "number of days" 365 $COUNT

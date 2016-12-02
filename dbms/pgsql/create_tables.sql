@@ -1,5 +1,12 @@
 -- Copyright 2016, PostgreSQL Global Development Group
 
+CREATE TABLE store (
+    id BIGINT NOT NULL,
+    store_number BIGINT NOT NULL,
+    state VARCHAR(14) NOT NULL,
+    state_abbr CHAR(2) NOT NULL
+);
+
 CREATE TABLE time (
     id BIGINT NOT NULL,
     date DATE NOT NULL,
