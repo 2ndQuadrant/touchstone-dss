@@ -12,6 +12,7 @@
 
 #define DATA_FORMAT_PGSQL 0
 
+#define DATAFILE_STORE "store.data"
 #define DATAFILE_TIME "time.data"
 
 #define START_YEAR 2001
@@ -23,6 +24,7 @@ struct df_t
 	int years;
 };
 
+int gen_store_data(char *, struct df_t *);
 int gen_time_data(char *, struct df_t *);
 
 #endif /* _DATAGEN_H_ */

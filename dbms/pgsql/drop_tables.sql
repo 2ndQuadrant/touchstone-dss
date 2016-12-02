@@ -16,4 +16,5 @@
 -- You should have received a copy of the GNU General Public License
 -- along with Touchstone-DSS.  If not, see <http://www.gnu.org/licenses/>.
 
+DROP TABLE IF EXISTS store;
 DROP TABLE IF EXISTS time;
