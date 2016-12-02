@@ -1,0 +1,18 @@
+# cmake
+CMakeFiles
+CMakeCache.txt
+cmake_install.cmake
+CTestTestfile.cmake
+install_manifest.txt
+Makefile
+
+# dia
+*.dia~
+
+# vi
+*.sw?
+
+src/bin/*
+!src/bin/CMakeLists.txt
+
+core
