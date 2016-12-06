@@ -3,6 +3,7 @@
 # Copyright 2016 PostgreSQL Global Development Group
 #
 
+PRODUCTFILE="product.data"
 STOREFILE="store.data"
 TIMEFILE="time.data"
 
@@ -15,6 +16,33 @@ oneTimeSetUp() {
 
 oneTimeTearDown() {
 	rm -rf $TMPDIR
+}
+
+testProductDataExists() {
+	if [[ -f $TMPDIR/$PRODUCTFILE ]]; then
+		RC=1
+	else
+		RC=0
+	fi
+	assertEquals "Check $PRODUCTFILE exists" 1 $RC
+}
+
+testProductDataOnly() {
+	mkdir $TMPDIR/p
+	../bin/tsdss-datagen -d $TMPDIR/p -t product
+	assertEquals "create product data file" 0 $?
+
+	if [[ -f $TMPDIR/p/$PRODUCTFILE ]]; then
+		RC=1
+	else
+		RC=0
+	fi
+	assertEquals "Check $PRODUCTFILE exists" 1 $RC
+}
+
+testProductDataRows() {
+	C=`wc -l $TMPDIR/$PRODUCTFILE | cut -d " " -f 1`
+	assertEquals "Check number of rows in $PRODUCTFILE" 1 $C
 }
 
 testStoreDataExists() {

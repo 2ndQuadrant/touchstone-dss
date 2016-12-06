@@ -1,5 +1,13 @@
 -- Copyright 2016, PostgreSQL Global Development Group
 
+CREATE TABLE product (
+    id BIGINT NOT NULL,
+    ean CHAR(13) NOT NULL,
+    name CHAR(20) NOT NULL,
+    brand CHAR(20) NOT NULL,
+    category CHAR(20) NOT NULL
+);
+
 CREATE TABLE store (
     id BIGINT NOT NULL,
     store_number BIGINT NOT NULL,
