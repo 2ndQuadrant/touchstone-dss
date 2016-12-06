@@ -6,18 +6,24 @@
 #include <stdlib.h>
 #include <string.h>
 #include <getopt.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <sys/time.h>
 
 #include "datagen.h"
 
-#define TABLE_STORE 1
-#define TABLE_TIME 2
+#define TABLE_PRODUCT 1
+#define TABLE_STORE 2
+#define TABLE_TIME 3
 
 void usage(char *filename)
 {
 	printf("usage: %s [options]\n", filename);
 	printf("  options:\n");
 	printf("    -d <path> - directory to generate data files, default: .\n");
+	printf("    -p <int> - number of products to generate, default: 1\n");
 	printf("    -t <table> - generate data for only 1 table: store, time\n");
+	printf("                 product\n");
 	printf("    -y <int> - number of years of data to generate, default: 1\n");
 }
 
@@ -27,6 +33,15 @@ int init_format(int data_format, struct df_t *df)
 
 	/* For ease of testing, try to work with everything in GMT/UTC. */
 	putenv("TZ=\":GMT\"");
+
+	if (df->seed == -1) {
+		struct timeval tv;
+
+		gettimeofday(&tv, NULL);
+
+		df->seed = getpid();
+		df->seed ^= tv.tv_sec ^ tv.tv_usec;
+	}
 
 	for (i = 0; i < df->years; i++)
 		df->days += get_days(START_YEAR + i);
@@ -53,6 +68,8 @@ int main(int argc, char *argv[])
 	/* Initialize default values. */
 
 	df.days = 0;
+	df.products = 1;
+	df.seed = -1;
 	df.years = 1;
 
 	while (1) {
@@ -61,7 +78,7 @@ int main(int argc, char *argv[])
 			{0, 0, 0, 0,}
 		};
 
-		c = getopt_long(argc, argv, "d:f:ht:y:",
+		c = getopt_long(argc, argv, "d:f:hp:S:t:y:",
 				long_options, &option_index);
 		if (c == -1)
 			break;
@@ -83,8 +100,16 @@ int main(int argc, char *argv[])
 		case 'h':
 			usage(argv[0]);
 			return 0;
+		case 'p':
+			df.products = atoi(optarg);
+			break;
+		case 'S':
+			df.seed = atoll(optarg);
+			break;
 		case 't':
-			if (strcmp("store", optarg) == 0) {
+			if (strcmp("product", optarg) == 0) {
+				table = TABLE_PRODUCT;
+			} else if (strcmp("store", optarg) == 0) {
 				table = TABLE_STORE;
 			} else if (strcmp("time", optarg) == 0) {
 				table = TABLE_TIME;
@@ -103,6 +128,9 @@ int main(int argc, char *argv[])
 	}
 
 	init_format(data_format, &df);
+
+	if (table == 0 || table == TABLE_PRODUCT)
+		gen_product_data(outdir, &df);
 
 	if (table == 0 || table == TABLE_STORE)
 		gen_store_data(outdir, &df);

@@ -16,6 +16,14 @@
 -- You should have received a copy of the GNU General Public License
 -- along with Touchstone-DSS.  If not, see <http://www.gnu.org/licenses/>.
 
+CREATE TABLE product (
+    id BIGINT NOT NULL,
+    ean CHAR(13) NOT NULL,
+    name CHAR(20) NOT NULL,
+    brand CHAR(20) NOT NULL,
+    category CHAR(20) NOT NULL
+);
+
 CREATE TABLE store (
     id BIGINT NOT NULL,
     store_number BIGINT NOT NULL,

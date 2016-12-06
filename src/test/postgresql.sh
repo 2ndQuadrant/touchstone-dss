@@ -37,6 +37,11 @@ tearDown() {
 	assertEquals "drop tables" 0 $?
 }
 
+testPgsqlLoadProductTable() {
+	$PSQL -c "COPY product FROM '$PGDATA/product.data';"
+	assertEquals "COPY" 0 $?
+}
+
 testPgsqlLoadStoreTable() {
 	$PSQL -c "COPY store FROM '$PGDATA/store.data';"
 	assertEquals "COPY" 0 $?
