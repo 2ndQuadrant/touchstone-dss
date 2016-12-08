@@ -13,6 +13,7 @@
 #define DATA_FORMAT_PGSQL 0
 
 #define DATAFILE_PRODUCT "product.data"
+#define DATAFILE_SALES "sales.data"
 #define DATAFILE_STORE "store.data"
 #define DATAFILE_TIME "time.data"
 
@@ -22,12 +23,14 @@ struct df_t
 {
 	int days;
 	int products;
+	int scale_factor;
 	unsigned long long seed;
 	char sep;
 	int years;
 };
 
 int gen_product_data(char *, struct df_t *);
+int gen_sales_data(char *, struct df_t *);
 int gen_store_data(char *, struct df_t *);
 int gen_time_data(char *, struct df_t *);
 
