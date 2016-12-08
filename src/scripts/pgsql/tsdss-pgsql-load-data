@@ -1,0 +1,215 @@
+#!/bin/sh
+#
+# Copyright 2016 PostgreSQL Global Development Group
+#
+
+usage() {
+	echo "Usage: `basename $0` <options>"
+	echo
+	echo "Options:"
+	echo "  -C <int>   Number of sales data file segments to generate, default 1"
+	echo "  -i <path>  Path to generate data files"
+}
+
+constrain_sales_product()
+{
+	$PSQL <<- __EOF__
+		ALTER TABLE sales
+		ADD FOREIGN KEY (product_id)
+		REFERENCES product (id);
+	__EOF__
+	RC=$?
+	if [ $RC -ne 0 ]; then
+		echo "error creating sales/product fk: $RC"
+		exit 1
+	fi
+}
+
+constrain_sales_store()
+{
+	$PSQL <<- __EOF__
+		ALTER TABLE sales
+		ADD FOREIGN KEY (store_id)
+		REFERENCES store (id);
+	__EOF__
+	RC=$?
+	if [ $RC -ne 0 ]; then
+		echo "error creating sales/store fk: $RC"
+		exit 1
+	fi
+}
+
+constrain_sales_time()
+{
+	$PSQL <<- __EOF__
+		ALTER TABLE sales
+		ADD FOREIGN KEY (time_id)
+		REFERENCES time (id);
+	__EOF__
+	RC=$?
+	if [ $RC -ne 0 ]; then
+		echo "error creating sales/time fk: $RC"
+		exit 1
+	fi
+}
+
+constrain_sales()
+{
+	constrain_sales_product &
+	local PID=$!
+	constrain_sales_store &
+	PID="$PID $!"
+	constrain_sales_time &
+	PID="$PID $!"
+
+	for P in $PID; do
+		wait $P
+		if [ $? -ne 0 ]; then
+			exit 1
+		fi
+	done
+}
+
+load_table()
+{
+	table=${1}
+	file=${table}.data
+
+	local PID=""
+
+	if [ $CHUNKS -eq 1 ] || [ "$table" = "product" ] || \
+			[ "$table" = "store" ] || [ "$table" = "time" ]; then
+		$PSQL <<- __EOF__
+			BEGIN;
+			TRUNCATE $table;
+			COPY $table FROM '$DATAFILE_PATH/$file';
+			COMMIT;
+		__EOF__
+		RC=$?
+		if [ $RC -ne 0 ]; then
+			echo "error loading $table: $RC"
+			exit 1
+		fi
+	else
+		i=1
+		while [ $i -le $CHUNKS ]; do
+			$PSQL <<- __EOF__ &
+				COPY $table FROM '$DATAFILE_PATH/$file.$i' ;
+			__EOF__
+			PID="$PID $!"
+			i=$(( $i + 1 ))
+		done
+	fi
+
+	for P in $PID; do
+		wait $P
+		if [ $? -ne 0 ]; then
+			exit 1
+		fi
+	done
+}
+
+load_product()
+{
+	load_table product
+
+	$PSQL <<- __EOF__ &
+		ALTER TABLE product
+		ADD CONSTRAINT pk_product
+		PRIMARY KEY (id);
+	__EOF__
+
+	wait $!
+	if [ $? -ne 0 ]; then
+		exit 1
+	fi
+
+	$PSQL -c "VACUUM ANALYZE product;"
+}
+
+load_sales()
+{
+	load_table sales
+
+	$PSQL -c "VACUUM ANALYZE sales;"
+}
+
+load_store()
+{
+	load_table store
+
+	$PSQL <<- __EOF__ &
+		ALTER TABLE store
+		ADD CONSTRAINT pk_store
+		PRIMARY KEY (id);
+	__EOF__
+
+	wait $!
+	if [ $? -ne 0 ]; then
+		exit 1
+	fi
+
+	$PSQL -c "VACUUM ANALYZE store;"
+}
+
+load_time()
+{
+	load_table time
+
+	$PSQL <<- __EOF__ &
+		ALTER TABLE time
+		ADD CONSTRAINT pk_time
+		PRIMARY KEY (id);
+	__EOF__
+
+	wait $!
+	if [ $? -ne 0 ]; then
+		exit 1
+	fi
+
+	$PSQL -c "VACUUM ANALYZE time;"
+}
+
+CHUNKS=1
+DATAFILE_PATH="."
+while getopts "C:hi:" OPT; do
+	case $OPT in
+	C)
+		CHUNKS=$OPTARG
+		;;
+	h)
+		usage
+		exit 0
+		;;
+	i)
+		DATAFILE_PATH=$OPTARG
+		;;
+	esac
+done
+
+PSQL="psql -v ON_ERROR_STOP=1 -X"
+
+if [ $LINUXPERF -eq 1 ]; then
+	PERFDIR="$OUTDIR/perf"
+	mkdir -p $PERFDIR
+fi
+
+load_sales &
+PID=$!
+load_product &
+PID="$PID $!"
+load_store &
+PID="$PID $!"
+load_time &
+PID="$PID $!"
+
+for P in $PID; do
+	wait $P
+	if [ $? -ne 0 ]; then
+		exit 1
+	fi
+done
+
+constrain_sales
+
+exit 0

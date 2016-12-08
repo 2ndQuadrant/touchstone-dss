@@ -13,8 +13,9 @@
 #include "datagen.h"
 
 #define TABLE_PRODUCT 1
-#define TABLE_STORE 2
-#define TABLE_TIME 3
+#define TABLE_SALES 2
+#define TABLE_STORE 3
+#define TABLE_TIME 4
 
 void usage(char *filename)
 {
@@ -22,8 +23,9 @@ void usage(char *filename)
 	printf("  options:\n");
 	printf("    -d <path> - directory to generate data files, default: .\n");
 	printf("    -p <int> - number of products to generate, default: 1\n");
-	printf("    -t <table> - generate data for only 1 table: store, time\n");
-	printf("                 product\n");
+	printf("    -s <int> - gibibytes of data to generate default: 1,\n");
+	printf("    -t <table> - generate data for only 1 table: product,\n");
+	printf("                 sales, store, time\n");
 	printf("    -y <int> - number of years of data to generate, default: 1\n");
 }
 
@@ -69,6 +71,7 @@ int main(int argc, char *argv[])
 
 	df.days = 0;
 	df.products = 1;
+	df.scale_factor = 1;
 	df.seed = -1;
 	df.years = 1;
 
@@ -78,7 +81,7 @@ int main(int argc, char *argv[])
 			{0, 0, 0, 0,}
 		};
 
-		c = getopt_long(argc, argv, "d:f:hp:S:t:y:",
+		c = getopt_long(argc, argv, "d:f:hp:s:S:t:y:",
 				long_options, &option_index);
 		if (c == -1)
 			break;
@@ -106,9 +109,14 @@ int main(int argc, char *argv[])
 		case 'S':
 			df.seed = atoll(optarg);
 			break;
+		case 's':
+			df.scale_factor = atoi(optarg);
+			break;
 		case 't':
 			if (strcmp("product", optarg) == 0) {
 				table = TABLE_PRODUCT;
+			} else if (strcmp("sales", optarg) == 0) {
+				table = TABLE_SALES;
 			} else if (strcmp("store", optarg) == 0) {
 				table = TABLE_STORE;
 			} else if (strcmp("time", optarg) == 0) {
@@ -131,6 +139,9 @@ int main(int argc, char *argv[])
 
 	if (table == 0 || table == TABLE_PRODUCT)
 		gen_product_data(outdir, &df);
+
+	if (table == 0 || table == TABLE_SALES)
+		gen_sales_data(outdir, &df);
 
 	if (table == 0 || table == TABLE_STORE)
 		gen_store_data(outdir, &df);

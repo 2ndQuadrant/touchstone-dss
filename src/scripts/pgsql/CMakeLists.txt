@@ -1,0 +1,1 @@
+INSTALL(PROGRAMS tsdss-pgsql-load-data DESTINATION "${INSTALLDEST}/bin")

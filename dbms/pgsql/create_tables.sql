@@ -8,6 +8,14 @@ CREATE TABLE product (
     category CHAR(20) NOT NULL
 );
 
+CREATE TABLE sales (
+    product_id BIGINT NOT NULL,
+    store_id BIGINT NOT NULL,
+    time_id BIGINT NOT NULL,
+    units INTEGER NOT NULL,
+    unit_price NUMERIC NOT NULL
+);
+
 CREATE TABLE store (
     id BIGINT NOT NULL,
     store_number BIGINT NOT NULL,

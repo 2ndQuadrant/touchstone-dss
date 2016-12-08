@@ -5,12 +5,15 @@ cmake_install.cmake
 CTestTestfile.cmake
 install_manifest.txt
 Makefile
+Testing
 
 # dia
 *.dia~
 
 # vi
 *.sw?
+
+*.patch
 
 src/bin/*
 !src/bin/CMakeLists.txt

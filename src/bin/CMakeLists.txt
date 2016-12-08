@@ -1,5 +1,5 @@
-SET(DATAGEN_FILES ../datagen/datagen.c ../datagen/product.c ../datagen/store.c
-		../datagen/time.c)
+SET(DATAGEN_FILES ../datagen/datagen.c ../datagen/product.c ../datagen/sales.c
+		../datagen/store.c ../datagen/time.c)
 SET_SOURCE_FILES_PROPERTIES(${DATAGEN_FILES} COMPILE_FLAGS "-I../include")
 ADD_EXECUTABLE(${PROJECT_NAME}-datagen ${DATAGEN_FILES})
 SET_TARGET_PROPERTIES(${PROJECT_NAME}-datagen PROPERTIES LINK_FLAGS

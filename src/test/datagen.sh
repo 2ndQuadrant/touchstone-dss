@@ -4,6 +4,7 @@
 #
 
 PRODUCTFILE="product.data"
+SALESFILE="sales.data"
 STOREFILE="store.data"
 TIMEFILE="time.data"
 
@@ -43,6 +44,28 @@ testProductDataOnly() {
 testProductDataRows() {
 	C=`wc -l $TMPDIR/$PRODUCTFILE | cut -d " " -f 1`
 	assertEquals "Check number of rows in $PRODUCTFILE" 1 $C
+}
+
+testSalesDataExists() {
+	if [[ -f $TMPDIR/$SALESFILE ]]; then
+		RC=1
+	else
+		RC=0
+	fi
+	assertEquals "Check $SALESFILE exists" 1 $RC
+}
+
+testSalesDataOnly() {
+	mkdir $TMPDIR/l
+	../bin/tsdss-datagen -d $TMPDIR/l -t sales
+	assertEquals "create sales data file" 0 $?
+
+	if [[ -f $TMPDIR/l/$SALESFILE ]]; then
+		RC=1
+	else
+		RC=0
+	fi
+	assertEquals "Check $SALESFILE exists" 1 $RC
 }
 
 testStoreDataExists() {

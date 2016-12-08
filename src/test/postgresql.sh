@@ -37,6 +37,17 @@ tearDown() {
 	assertEquals "drop tables" 0 $?
 }
 
+testPgsqlLoadDatabase() {
+	export PGHOST=$PGDATA
+	../scripts/pgsql/tsdss-pgsql-load-data -i $PGDATA
+	assertEquals "tsdss-pgsql-load-data" 0 $?
+}
+
+testPgsqlLoadProductTable() {
+	$PSQL -c "COPY fact FROM '$PGDATA/fact.data';"
+	assertEquals "COPY" 0 $?
+}
+
 testPgsqlLoadProductTable() {
 	$PSQL -c "COPY product FROM '$PGDATA/product.data';"
 	assertEquals "COPY" 0 $?
