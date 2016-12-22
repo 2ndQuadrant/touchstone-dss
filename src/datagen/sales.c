@@ -14,26 +14,74 @@ struct sales_t {
 	double unit_price;
 };
 
+int write_sales_files(char *, struct df_t *, long long, long long);
+
 int gen_sales_data(char *outdir, struct df_t *df)
 {
-	long long i;
-	FILE *output;
+	int i;
 	char filename[FILENAME_LEN + 1];
 	long long row_size;
 	long long max_rows;
 
-	struct sales_t sales_t;
+	/* 1 gibibytes = 1 073 741 824 bytes */
 
-	snprintf(filename, FILENAME_LEN, "%s/%s", outdir, DATAFILE_SALES);
-	output = fopen(filename, "w");
+	row_size = sizeof(struct sales_t);
+	max_rows = 1073741824 / row_size;
+
+	if (df->chunks == 1) {
+		snprintf(filename, FILENAME_LEN, "%s/%s", outdir, DATAFILE_SALES);
+		write_sales_files(filename, df, 0, max_rows);
+	} else {
+		long long chunk;
+
+		chunk = (long long) (max_rows / df->chunks);
+
+		if (df->only_one_chunk) {
+			snprintf(filename, FILENAME_LEN, "%s/%s.%d", outdir,
+						DATAFILE_SALES, df->chunk);
+			if (df->chunk == df->chunks)
+				write_sales_files(filename, df, (df->chunk - 1) * chunk,
+						max_rows);
+			else
+				write_sales_files(filename, df, (df->chunk - 1) * chunk,
+						df->chunk * chunk);
+			return 0;
+		}
+
+		for (i = 0; i < df->chunks - 1; i++) {
+			snprintf(filename, FILENAME_LEN, "%s/%s.%d", outdir,
+					DATAFILE_SALES, i + 1);
+			write_sales_files(filename, df, i * chunk, (i + 1) * chunk);
+		}
+		snprintf(filename, FILENAME_LEN, "%s/%s.%d", outdir,
+					DATAFILE_SALES, df->chunks);
+		write_sales_files(filename, df, (df->chunks - 1) * chunk, max_rows);
+	}
+
+	return 0;
+}
+
+int write_sales_files(char *filename, struct df_t *df, long long start,
+		long long stop)
+{
+	long long i;
+	FILE *output;
+
+	struct sales_t sales_t;
 
 	init_genrand64(df->seed);
 
-	/* 1 gibibytes = 1 073 741 824 bytes */
-	row_size = sizeof(sales_t);
-	max_rows = 1073741824 / row_size;
+	output = fopen(filename, "w");
 
-	for (i = 0; i < max_rows; i++) {
+	for (i = 0; i < start; i++) {
+		getrand(1, df->products);
+		getrand(1, 50);
+		getrand(1, df->days);
+		getGaussianRand(1, 10000, 5);
+		getrand(1, 10000000);
+	}
+
+	for (i = start; i < stop; i++) {
 		sales_t.product_id = getrand(1, df->products);
 		sales_t.store_id = getrand(1, 50);
 		sales_t.time_id = 978307200 + getrand(0, df->days - 1) * 86400;

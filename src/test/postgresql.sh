@@ -43,6 +43,13 @@ testPgsqlLoadDatabase() {
 	assertEquals "tsdss-pgsql-load-data" 0 $?
 }
 
+testPgsqlLoadDatabaseChunked() {
+	export PGHOST=$PGDATA
+	../bin/tsdss-datagen -d $PGDATA -f pgsql -t sales -c 2
+	../scripts/pgsql/tsdss-pgsql-load-data -i $PGDATA -C 2
+	assertEquals "tsdss-pgsql-load-data" 0 $?
+}
+
 testPgsqlLoadProductTable() {
 	$PSQL -c "COPY fact FROM '$PGDATA/fact.data';"
 	assertEquals "COPY" 0 $?

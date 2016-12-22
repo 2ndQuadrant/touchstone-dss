@@ -21,6 +21,8 @@ void usage(char *filename)
 {
 	printf("usage: %s [options]\n", filename);
 	printf("  options:\n");
+	printf("    -c <int> - number of data file chunks to generate, default: 1\n");
+	printf("    -C <int> - specify which chunk to generate\n");
 	printf("    -d <path> - directory to generate data files, default: .\n");
 	printf("    -p <int> - number of products to generate, default: 1\n");
 	printf("    -s <int> - gibibytes of data to generate default: 1,\n");
@@ -69,7 +71,9 @@ int main(int argc, char *argv[])
 
 	/* Initialize default values. */
 
+	df.chunks = 1;
 	df.days = 0;
+	df.only_one_chunk = 0;
 	df.products = 1;
 	df.scale_factor = 1;
 	df.seed = -1;
@@ -81,13 +85,20 @@ int main(int argc, char *argv[])
 			{0, 0, 0, 0,}
 		};
 
-		c = getopt_long(argc, argv, "d:f:hp:s:S:t:y:",
+		c = getopt_long(argc, argv, "c:C:d:f:hp:s:S:t:y:",
 				long_options, &option_index);
 		if (c == -1)
 			break;
 
 		switch (c) {
 		case 0:
+			break;
+		case 'c':
+			df.chunks = atoi(optarg);
+			break;
+		case 'C':
+			df.only_one_chunk = 1;
+			df.chunk = atoi(optarg);
 			break;
 		case 'd':
 			strncpy(outdir, optarg, OUTDIR_LEN);
@@ -133,6 +144,17 @@ int main(int argc, char *argv[])
 			printf("?? getopt returned character code 0%o ??\n", c);
 			return 2;
 		}
+	}
+
+	if (df.chunks < 1) {
+		fprintf(stderr, "ERROR: -c must be at least 1\n");
+		return 10;
+	}
+
+	if (df.only_one_chunk && (df.chunk < 1 || df.chunk > df.chunks)) {
+		fprintf(stderr, "ERROR: -C must be at least 1 and at most %d\n",
+				df.chunks);
+		return 11;
 	}
 
 	init_format(data_format, &df);

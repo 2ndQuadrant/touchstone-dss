@@ -21,7 +21,10 @@
 
 struct df_t
 {
+	int chunk; /* Generate only this chunk. */
+	int chunks; /* Number of chunks to generate. */
 	int days;
+	int only_one_chunk; /* Flag to generate only one file. */
 	int products;
 	int scale_factor;
 	unsigned long long seed;
