@@ -1,0 +1,116 @@
+#!/bin/sh
+#
+# Copyright 2017 PostgreSQL Global Development Group
+#
+
+trap 'cleanup' EXIT
+
+usage() {
+	echo "Usage: `basename $0` <options>"
+	echo
+	echo "Options:"
+	echo "  -C <int>   Number of sales data file segments to generate, default 1"
+	echo "  -D <str>   Database management system to test: pgsql"
+	echo "  -g         Generate data files"
+	echo "  -h         This help message"
+	echo "  -o <path>  Path to save results"
+	echo "  -i <path>  Path to generate data files"
+	echo "  -P <str>   Database parameters"
+	echo "  -p <int>   Number of products to generate, default 1"
+	echo "  -s <int>   Gibibytes of sales data to generate, default 1"
+	echo "  -y <int>   Number of years of data to generate, default 1"
+}
+
+cleanup() {
+	if [ $? -ne 0 ]; then
+		tsdss-sysstat -o $OUTDIR -s
+		tsdss-$DBMS-stat -o $OUTDIR -s
+	fi
+}
+
+CHUNKS=1
+DATAFILE_PATH="."
+DBMS=""
+FLAG_DBPARAMS=""
+FLAG_OUTDIR=""
+GENERATE_DATA=0
+PRODUCTS=1
+SCALE_FACTOR=1
+YEARS=1
+
+while getopts "C:D:ghi:o:P:p:s:y:" OPT; do
+	case $OPT in
+	C)
+		CHUNKS=$OPTARG
+		;;
+	D)
+		DBMS=$OPTARG
+		;;
+	g)
+		GENERATE_DATA=1
+		;;
+	h)
+		usage
+		exit 0
+		;;
+	i)
+		DATAFILE_PATH=$OPTARG
+		;;
+	o)
+		OUTDIR="$OPTARG/load"
+		FLAG_OUTDIR="-o $OUTDIR"
+		mkdir -p $OUTDIR
+		;;
+	P)
+		FLAG_DBPARAMS="-P \"$OPTARG\""
+		;;
+	p)
+		PRODUCTS=$OPTARG
+		;;
+	s)
+		SCALE_FACTOR=$OPTARG
+		;;
+	y)
+		YEARS=$OPTARG
+		;;
+	esac
+done
+
+if [ "x$DBMS" = "x" ]; then
+	echo "ERROR: specify DBMS to test"
+	exit 1
+fi
+
+if [ $GENERATE_DATA -eq 1 ]; then
+	echo "Generating data files..."
+	tsdss-datagen -d $DATAFILE_PATH -c $CHUNKS -p $PRODUCTS -s $SCALE_FACTOR \
+			-y $YEARS
+	RC=$?
+	if [ $RC -ne 0 ]; then
+		echo "ERROR: tsdss-datagen $RC"
+		exit 1
+	fi
+fi
+
+echo "Starting load test..."
+
+echo "  Creating database..."
+eval tsdss-$DBMS-create-database $FLAG_DBPARAMS $FLAG_OUTDIR
+RC=$?
+if [ $RC -ne 0 ]; then
+	echo "ERROR: tsdss-$DBMS-create-database $RC"
+	exit 1
+fi
+
+eval tsdss-$DBMS-start $FLAG_DBPARAMS $FLAG_OUTDIR || exit 1
+TIME0=`date +%s`
+tsdss-$DBMS-load-data -C $CHUNKS -i $DATAFILE_PATH || exit 1
+TIME1=`date +%s`
+tsdss-$DBMS-stop || exit 1
+LOADTIMEFILE="$OUTDIR/results.txt"
+echo $(( $TIME1 - $TIME0 )) > $LOADTIMEFILE
+echo "Load Test Time: `cat $LOADTIMEFILE` seconds"
+
+echo "Load test complete."
+
+exit 0

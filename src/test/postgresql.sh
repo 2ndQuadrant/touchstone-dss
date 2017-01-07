@@ -1,6 +1,6 @@
 #! /bin/sh
 #
-# Copyright 2016 PostgreSQL Global Development Group
+# Copyright 2016-2017 PostgreSQL Global Development Group
 #
 
 export PGUSER="postgres"
@@ -28,12 +28,14 @@ oneTimeTearDown() {
 }
 
 setUp() {
-	$PSQL -f ../../dbms/pgsql/create_tables.sql
+	export PGHOST=$PGDATA
+	../scripts/pgsql/tsdss-pgsql-create-tables
 	assertEquals "create tables" 0 $?
 }
 
 tearDown() {
-	$PSQL -f ../../dbms/pgsql/drop_tables.sql
+	export PGHOST=$PGDATA
+	../scripts/pgsql/tsdss-pgsql-drop-tables
 	assertEquals "drop tables" 0 $?
 }
 

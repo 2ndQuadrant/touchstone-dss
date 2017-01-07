@@ -1,0 +1,13 @@
+#!/bin/sh
+#
+# Copyright 2017 PostgreSQL Global Development Group
+#
+
+if [ -z $PGDATA ]; then
+	echo "ERROR: PGDATA not defined."
+	exit 1
+fi
+
+if [ -f "$PGDATA/postmaster.pid" ]; then
+	pg_ctl -w -D $PGDATA -t 600 stop
+fi

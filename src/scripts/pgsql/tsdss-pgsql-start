@@ -1,0 +1,50 @@
+#!/bin/sh
+#
+# Copyright 2017 PostgreSQL Global Development Group
+#
+
+usage() {
+	echo "Usage: `basename $0` <options>"
+	echo
+	echo "Options:"
+	echo "  -h         This help message"
+	echo "  -o <path>  Path to save log files"
+	echo "  -P <str>   Database parameters"
+}
+
+if [ -z $PGDATA ]; then
+	echo "ERROR: PGDATA not defined."
+	exit 1
+fi
+
+FLAG_DBPARAMS=""
+LOGFILE="tsdss.log"
+OUTDIR="."
+while getopts "ho:P:p:" OPT; do
+	case $OPT in
+	h)
+		usage
+		exit 0
+		;;
+	o)
+		OUTDIR=$OPTARG
+		;;
+	P)
+		FLAG_DBPARAMS="-o \"$OPTARG\""
+		;;
+	esac
+done
+
+if [ -f "$PGDATA/postmaster.pid" ]; then
+	echo "Database is already started: $PGDATA/postmaster.pid."
+	exit 0
+fi
+
+eval pg_ctl -w -D $PGDATA $FLAG_DBPARAMS -l $OUTDIR/$LOGFILE start
+
+if [ ! -f "$PGDATA/postmaster.pid" ]; then
+	echo "ERROR: PostgreSQL did not start correctly, check database log"
+	exit 1
+fi
+
+exit 0

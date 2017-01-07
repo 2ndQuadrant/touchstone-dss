@@ -1,0 +1,103 @@
+#!/bin/sh
+#
+# Copyright 2017 PostgreSQL Global Development Group
+#
+
+usage() {
+	echo "Usage: `basename $0` <options>"
+	echo
+	echo "Options:"
+	echo "  -C <int>   Number of sales data file segments to generate, default 1"
+	echo "  -D <str>   Database management system to test: pgsql"
+	echo "  -g         Generate data files"
+	echo "  -h         This help message"
+	echo "  -i <path>  Path to generate data files"
+	echo "  -o <path>  Path to save results"
+	echo "  -P <str>   Database parameters"
+	echo "  -p <int>   Number of products to generate, default 1"
+	echo "  -s <int>   Gibibytes of sales data to generate, default 1"
+	echo "  -y <int>   Number of years of data to generate, default 1"
+}
+
+CHUNKS=1
+DATAFILE_PATH="."
+DBMS=""
+FLAG_DBPARAMS=""
+FLAG_GENERATE_DATA=""
+OUTDIR=""
+PRODUCTS=1
+SCALE_FACTOR=1
+YEARS=1
+
+while getopts "C:D:ghi:o:P:p:s:y:" OPT; do
+	case $OPT in
+	C)
+		CHUNKS=$OPTARG
+		;;
+	D)
+		DBMS=$OPTARG
+		;;
+	g)
+		FLAG_GENERATE_DATA="-g"
+		;;
+	h)
+		usage
+		exit 0
+		;;
+	i)
+		DATAFILE_PATH=$OPTARG
+		;;
+	o)
+		OUTDIR=$OPTARG
+		if [ -d $OUTDIR ]; then
+			echo "Results directory already exists: $OUTDIR"
+			exit 1
+		fi
+		mkdir -p $OUTDIR
+		;;
+	P)
+		FLAG_DBPARAMS="-P \"$OPTARG\""
+		;;
+	p)
+		PRODUCTS=$OPTARG
+		;;
+	s)
+		SCALE_FACTOR=$OPTARG
+		;;
+	y)
+		YEARS=$OPTARG
+		;;
+	esac
+done
+
+if [ "x$DBMS" = "x" ]; then
+	echo "ERROR: Specify DBMS to test"
+	exit 1
+fi
+
+if [ "x$OUTDIR" = "x" ]; then
+	echo "ERROR: Specify directory to save results"
+	exit 1
+fi
+
+README="$OUTDIR/readme.txt"
+
+echo "Test paramters:"
+echo "  DBMS: $DBMS" >> $README
+echo "  Scale Factor: $SCALE_FACTOR" >> $README
+echo "  Products: $PRODUCTS" >> $README
+echo "  Years: $YEARS" >> $README
+cat $README
+echo "  Command line arguments: $@" >> $README
+
+eval tsdss-load-test -D $DBMS -i $DATAFILE_PATH -C $CHUNKS -s $SCALE_FACTOR \
+		-p $PRODUCTS -y $YEARS -o $OUTDIR $FLAG_DBPARAMS $FLAG_GENERATE_DATA
+RC=$?
+if [ $RC -ne 0 ]; then
+	echo "ERROR: tsdss-datagen $RC"
+	exit 1
+fi
+
+echo "Workload complete."
+
+exit 0

@@ -1,0 +1,8 @@
+Requirements
+============
+
+The documentation is written using pandoc markdown, and diagrams have been
+drawn with dia.  Running the following command will generate pdf versions of
+the markdown documents:
+
+    make docs

@@ -1,0 +1,66 @@
+#!/bin/sh
+#
+# Copyright 2017 PostgreSQL Global Development Group
+#
+
+trap 'cleanup' EXIT
+
+cleanup() {
+	if [ $? -ne 0 ]; then
+		tsdss-pgsql-stop
+	fi
+}
+
+usage() {
+	echo "Usage: `basename $0` <options>"
+	echo
+	echo "Options:"
+	echo "  -h         This help message"
+	echo "  -o <path>  Path to save results"
+	echo "  -P <str>   Database parameters"
+}
+
+FLAG_CHUNKS=""
+FLAG_DBPARAMS=""
+OUTDIR="."
+while getopts "ho:P:" OPT; do
+	case $OPT in
+	h)
+		usage
+		exit 0
+		;;
+	o)
+		OUTDIR=$OPTARG
+		;;
+	P)
+		FLAG_DBPARAMS="-P \"$OPTARG\""
+		;;
+	esac
+done
+
+FLAG_OUTDIR="-o $OUTDIR"
+
+if [ -z $PGDATA ]; then
+    echo "ERROR: PGDATA not defined."
+    exit 1
+fi
+
+if [ -z $PGDATABASE ]; then
+    echo "ERROR: PGDATABASE environment variable not defined"
+    exit 1
+fi
+
+if [ -d $PGDATA ]; then
+	echo "  PGDATA directory '$PGDATA' already exists, skipping initdb..."
+else
+	echo "  Initializing PostgreSQL database instance..."
+	initdb -A trust -D $PGDATA --locale=C || exit 1
+fi
+
+eval tsdss-pgsql-start $FLAG_DBPARAMS $FLAG_OUTDIR || exit 1
+dropdb --if-exists $PGDATABASE || exit 1
+createdb $PGDATABASE || exit 1
+tsdss-pgsql-create-tables || exit 1
+tsdss-pgsql-stop || exit 1
+
+exit 0
