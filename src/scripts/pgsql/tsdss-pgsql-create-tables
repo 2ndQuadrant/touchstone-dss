@@ -1,5 +1,11 @@
--- Copyright 2016, PostgreSQL Global Development Group
+#!/bin/sh
+#
+# Copyright 2017 PostgreSQL Global Development Group
+#
 
+PSQL="psql -v ON_ERROR_STOP=1 -X"
+
+$PSQL <<- __EOF__
 CREATE TABLE product (
     id BIGINT NOT NULL,
     ean CHAR(13) NOT NULL,
@@ -34,3 +40,11 @@ CREATE TABLE time (
     quarter_name CHAR(2) NOT NULL,
     year SMALLINT NOT NULL
 );
+__EOF__
+RC=$?
+if [ $RC -ne 0 ]; then
+	echo "ERROR: creating tables $RC"
+	exit 1
+fi
+
+exit 0

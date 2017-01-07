@@ -1,1 +1,6 @@
+INSTALL(PROGRAMS tsdss-pgsql-create-database DESTINATION "${INSTALLDEST}/bin")
+INSTALL(PROGRAMS tsdss-pgsql-create-tables DESTINATION "${INSTALLDEST}/bin")
+INSTALL(PROGRAMS tsdss-pgsql-drop-tables DESTINATION "${INSTALLDEST}/bin")
 INSTALL(PROGRAMS tsdss-pgsql-load-data DESTINATION "${INSTALLDEST}/bin")
+INSTALL(PROGRAMS tsdss-pgsql-start DESTINATION "${INSTALLDEST}/bin")
+INSTALL(PROGRAMS tsdss-pgsql-stop DESTINATION "${INSTALLDEST}/bin")
