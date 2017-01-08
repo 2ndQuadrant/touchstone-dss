@@ -1,0 +1,41 @@
+# -/bin/sh
+#
+# Copyright 2017 PostgreSQL Global Development Group
+#
+
+usage() {
+	echo "Usage: `basename $0` <options>"
+	echo
+	echo "Options:"
+	echo "  -o <path>  Path to saved results"
+}
+
+
+OUTDIR=""
+while getopts "ho:" OPT; do
+	case $OPT in
+	h)
+		usage
+		exit 0
+		;;
+	o)
+		OUTDIR=$OPTARG
+		;;
+	esac
+done
+
+if [ -z "$OUTDIR" ]; then
+	echo "ERROR: Specify output directory with -o"
+	exit 1
+fi
+
+for FILE in `find $OUTDIR -name perf-*.data`; do
+	BASENAME="${FILE%.*}"
+	perf report -i $FILE -n > $BASENAME-report.txt 2>> $BASENAME-output.txt
+	# Don't know why annotate spins on FUTUEX.
+	#perf annotate -l -P -i $FILE > $BASENAME-annotate.txt \
+	#		2>> $BASENAME-output.txt
+	perf script -L -i $FILE > $BASENAME-trace.txt 2>> $BASENAME-output.txt
+done
+
+exit 0
