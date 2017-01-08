@@ -103,10 +103,15 @@ if [ $RC -ne 0 ]; then
 fi
 
 eval tsdss-$DBMS-start $FLAG_DBPARAMS $FLAG_OUTDIR || exit 1
+
+tsdss-sysstat -o $OUTDIR
 TIME0=`date +%s`
 tsdss-$DBMS-load-data -C $CHUNKS -i $DATAFILE_PATH || exit 1
 TIME1=`date +%s`
+tsdss-sysstat -o $OUTDIR -s
+
 tsdss-$DBMS-stop || exit 1
+
 LOADTIMEFILE="$OUTDIR/results.txt"
 echo $(( $TIME1 - $TIME0 )) > $LOADTIMEFILE
 echo "Load Test Time: `cat $LOADTIMEFILE` seconds"
