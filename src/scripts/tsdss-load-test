@@ -15,6 +15,7 @@ usage() {
 	echo "  -h         This help message"
 	echo "  -o <path>  Path to save results"
 	echo "  -i <path>  Path to generate data files"
+	echo "  -L         Enable Linux perf profiling"
 	echo "  -P <str>   Database parameters"
 	echo "  -p <int>   Number of products to generate, default 1"
 	echo "  -s <int>   Gibibytes of sales data to generate, default 1"
@@ -32,13 +33,14 @@ CHUNKS=1
 DATAFILE_PATH="."
 DBMS=""
 FLAG_DBPARAMS=""
+FLAG_LINUXPERF=""
 FLAG_OUTDIR=""
 GENERATE_DATA=0
 PRODUCTS=1
 SCALE_FACTOR=1
 YEARS=1
 
-while getopts "C:D:ghi:o:P:p:s:y:" OPT; do
+while getopts "C:D:ghi:Lo:P:p:s:y:" OPT; do
 	case $OPT in
 	C)
 		CHUNKS=$OPTARG
@@ -55,6 +57,9 @@ while getopts "C:D:ghi:o:P:p:s:y:" OPT; do
 		;;
 	i)
 		DATAFILE_PATH=$OPTARG
+		;;
+	L)
+		FLAG_LINUXPERF="-L"
 		;;
 	o)
 		OUTDIR="$OPTARG/load"
@@ -106,7 +111,10 @@ eval tsdss-$DBMS-start $FLAG_DBPARAMS $FLAG_OUTDIR || exit 1
 
 tsdss-sysstat -o $OUTDIR
 TIME0=`date +%s`
-tsdss-$DBMS-load-data -C $CHUNKS -i $DATAFILE_PATH || exit 1
+
+tsdss-$DBMS-load-data -C $CHUNKS -i $DATAFILE_PATH $FLAG_OUTDIR \
+		$FLAG_LINUXPERF || exit 1
+
 TIME1=`date +%s`
 tsdss-sysstat -o $OUTDIR -s
 

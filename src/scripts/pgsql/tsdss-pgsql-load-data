@@ -9,11 +9,16 @@ usage() {
 	echo "Options:"
 	echo "  -C <int>   Number of sales data file segments to generate, default 1"
 	echo "  -i <path>  Path to generate data files"
+	echo "  -L         Enable Linux perf profiling"
+	echo "  -o <path>  Path to save results"
 }
 
 constrain_sales_product()
 {
-	$PSQL <<- __EOF__
+	if [ $LINUXPERF -eq 1 ]; then
+		local CMD="$PERFCOMMAND -o $PERFDIR/perf-sales-product-fk.data"
+	fi
+	$CMD $PSQL <<- __EOF__
 		ALTER TABLE sales
 		ADD FOREIGN KEY (product_id)
 		REFERENCES product (id);
@@ -27,7 +32,10 @@ constrain_sales_product()
 
 constrain_sales_store()
 {
-	$PSQL <<- __EOF__
+	if [ $LINUXPERF -eq 1 ]; then
+		local CMD="$PERFCOMMAND -o $PERFDIR/perf-sales-store-fk.data"
+	fi
+	$CMD $PSQL <<- __EOF__
 		ALTER TABLE sales
 		ADD FOREIGN KEY (store_id)
 		REFERENCES store (id);
@@ -41,7 +49,10 @@ constrain_sales_store()
 
 constrain_sales_time()
 {
-	$PSQL <<- __EOF__
+	if [ $LINUXPERF -eq 1 ]; then
+		local CMD="$PERFCOMMAND -o $PERFDIR/perf-sales-time-fk.data"
+	fi
+	$CMD $PSQL <<- __EOF__
 		ALTER TABLE sales
 		ADD FOREIGN KEY (time_id)
 		REFERENCES time (id);
@@ -79,7 +90,10 @@ load_table()
 
 	if [ $CHUNKS -eq 1 ] || [ "$table" = "product" ] || \
 			[ "$table" = "store" ] || [ "$table" = "time" ]; then
-		$PSQL <<- __EOF__
+		if [ $LINUXPERF -eq 1 ]; then
+			local CMD="$PERFCOMMAND -o $PERFDIR/perf-$table.data"
+		fi
+		$CMD $PSQL <<- __EOF__
 			BEGIN;
 			TRUNCATE $table;
 			COPY $table FROM '$DATAFILE_PATH/$file';
@@ -93,7 +107,10 @@ load_table()
 	else
 		i=1
 		while [ $i -le $CHUNKS ]; do
-			$PSQL <<- __EOF__ &
+			if [ $LINUXPERF -eq 1 ]; then
+				local CMD="$PERFCOMMAND -o $PERFDIR/perf-$table-$i.data"
+			fi
+			$CMD $PSQL <<- __EOF__ &
 				COPY $table FROM '$DATAFILE_PATH/$file.$i' ;
 			__EOF__
 			PID="$PID $!"
@@ -172,7 +189,11 @@ load_time()
 
 CHUNKS=1
 DATAFILE_PATH="."
-while getopts "C:hi:" OPT; do
+LINUXPERF=0
+OUTDIR="."
+PERFCOMMAND=""
+PERFDIR=""
+while getopts "C:hi:Lo:" OPT; do
 	case $OPT in
 	C)
 		CHUNKS=$OPTARG
@@ -183,6 +204,14 @@ while getopts "C:hi:" OPT; do
 		;;
 	i)
 		DATAFILE_PATH=$OPTARG
+		;;
+	L)
+		LINUXPERF=1
+		PERFCOMMAND="perf record -a -g -s"
+		;;
+	o)
+		OUTDIR="$OPTARG"
+		mkdir -p $OUTDIR
 		;;
 	esac
 done
