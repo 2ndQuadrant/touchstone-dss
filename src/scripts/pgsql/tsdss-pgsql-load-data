@@ -74,10 +74,16 @@ constrain_sales()
 {
 	local PIDS=""
 
-	if [ "x$PG_PARTITION" = "xinheritance" ]; then
-		for FILE in `ls $DATAFILE_PATH/sales-*.data`; do
-			local TABLE=`basename ${FILE%.*} | sed -e 's/-/_/g'`
-
+	if [ "x$PG_PARTITION" = "xinheritance" ] || \
+			[ "x$PG_PARTITION" = "xnative" ]; then
+		local TABLES=`$PSQL <<- __EOF__
+			SELECT tablename
+			FROM pg_tables
+			WHERE tablename
+			LIKE 'sales\\_%';
+		__EOF__
+		`
+		for TABLE in $TABLES; do
 			constrain_sales_product $TABLE &
 			PIDS="$PIDS $!"
 			constrain_sales_store $TABLE &
@@ -275,7 +281,7 @@ while getopts "C:hi:Lo:" OPT; do
 	esac
 done
 
-PSQL="psql -v ON_ERROR_STOP=1 -X"
+PSQL="psql -v ON_ERROR_STOP=1 -X -t --no-align"
 
 if [ $LINUXPERF -eq 1 ]; then
 	PERFDIR="$OUTDIR/perf"

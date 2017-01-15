@@ -35,3 +35,8 @@ Use table inheritance to partition the **sales** fact table by month, set the
 following environment variable:
 
     export PG_PARTITION="inheritance"
+
+Use native declarative partitioning to partition the **sales** fact table by
+month, set the following environment variable, requires version 10:
+
+    export PG_PARTITION="native"
