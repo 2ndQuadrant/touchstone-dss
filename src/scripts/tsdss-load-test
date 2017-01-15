@@ -33,6 +33,7 @@ CHUNKS=1
 DATAFILE_PATH="."
 DBMS=""
 FLAG_DBPARAMS=""
+FLAG_GENERATE_DATA=""
 FLAG_LINUXPERF=""
 FLAG_OUTDIR=""
 GENERATE_DATA=0
@@ -50,6 +51,7 @@ while getopts "C:D:ghi:Lo:P:p:s:y:" OPT; do
 		;;
 	g)
 		GENERATE_DATA=1
+		FLAG_GENERATE_DATA="-g"
 		;;
 	h)
 		usage
@@ -100,7 +102,8 @@ fi
 echo "Starting load test..."
 
 echo "  Creating database..."
-eval tsdss-$DBMS-create-database $FLAG_DBPARAMS $FLAG_OUTDIR
+eval tsdss-$DBMS-create-database -y $YEARS -i $DATAFILE_PATH $FLAG_DBPARAMS \
+		$FLAG_GENERATE_DATA $FLAG_OUTDIR
 RC=$?
 if [ $RC -ne 0 ]; then
 	echo "ERROR: tsdss-$DBMS-create-database $RC"

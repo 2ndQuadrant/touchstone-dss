@@ -3,7 +3,67 @@
 # Copyright 2017 PostgreSQL Global Development Group
 #
 
-PSQL="psql -v ON_ERROR_STOP=1 -X"
+usage() {
+	echo "Usage: `basename $0` <options>"
+	echo
+	echo "Options:"
+	echo "  -g         Flag to generate datafiles for table partitioning"
+	echo "  -y <int>   Number of years of data that will be generated"
+}
+
+create_child_tables() {
+	Y=0
+	while [ $Y -lt $YEARS ]; do
+		M=0
+		while [ $M -lt 12 ]; do
+			YEAR=$(( 2001 + $Y))
+			MONTH=$(( $M + 1))
+			TABLENAME="sales_${YEAR}_${MONTH}"
+
+			TIME0=`$PSQL -c "SELECT EXTRACT(EPOCH FROM '$YEAR-$MONTH-01'::DATE);"`
+			TIME1=`$PSQL -c "SELECT EXTRACT(EPOCH FROM '$YEAR-$MONTH-01'::DATE + INTERVAL '1' MONTH);"`
+
+			$PSQL <<- __EOF__
+				CREATE TABLE $TABLENAME (
+					CHECK (time_id >= $TIME0 AND time_id < $TIME1)
+				) INHERITS (sales);
+			__EOF__
+
+			if [ $GENERATE_DATA -eq 1 ]; then
+				for FILE in `ls $DATAFILE_PATH/sales.data*`; do
+					awk "(\$3 >= $TIME0 && \$3 < $TIME1) {print}" $FILE \
+							>> $DATAFILE_PATH/sales-$YEAR-$MONTH.data
+				done
+			fi
+
+			M=$(( $M + 1 ))
+		done
+		Y=$(( $Y + 1 ))
+	done
+}
+
+DATAFILE_PATH=""
+GENERATE_DATA=0
+YEARS=""
+while getopts "ghi:y:" OPT; do
+	case $OPT in
+	g)
+		GENERATE_DATA=1
+		;;
+	h)
+		usage
+		exit 0
+		;;
+	i)
+		DATAFILE_PATH=$OPTARG
+		;;
+	y)
+		YEARS=$OPTARG
+		;;
+	esac
+done
+
+PSQL="psql -v ON_ERROR_STOP=1 -X -t --no-align"
 
 $PSQL <<- __EOF__
 CREATE TABLE product (
@@ -45,6 +105,20 @@ RC=$?
 if [ $RC -ne 0 ]; then
 	echo "ERROR: creating tables $RC"
 	exit 1
+fi
+
+if [ -n "$PG_PARTITION" ]; then
+	if [ -z "$YEARS" ]; then
+		echo "ERROR: Expected years of data must be specified with -y"
+		exit 1
+	fi
+
+	if [ "x$PG_PARTITION" = "xinheritance" ]; then
+		create_child_tables
+	else
+		echo "ERROR: Unknown partitioning scheme: $PG_PARTITION"
+		exit 1
+	fi
 fi
 
 exit 0

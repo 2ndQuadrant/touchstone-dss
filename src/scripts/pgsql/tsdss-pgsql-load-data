@@ -15,70 +15,113 @@ usage() {
 
 constrain_sales_product()
 {
+	TABLE=$1
+
 	if [ $LINUXPERF -eq 1 ]; then
-		local CMD="$PERFCOMMAND -o $PERFDIR/perf-sales-product-fk.data"
+		local CMD="$PERFCOMMAND -o $PERFDIR/perf-$TABLE-product-fk.data"
 	fi
 	$CMD $PSQL <<- __EOF__
-		ALTER TABLE sales
+		ALTER TABLE $TABLE
 		ADD FOREIGN KEY (product_id)
 		REFERENCES product (id);
 	__EOF__
 	RC=$?
 	if [ $RC -ne 0 ]; then
-		echo "error creating sales/product fk: $RC"
+		echo "error creating $TABLE/product fk: $RC"
 		exit 1
 	fi
 }
 
 constrain_sales_store()
 {
+	TABLE=$1
+
 	if [ $LINUXPERF -eq 1 ]; then
-		local CMD="$PERFCOMMAND -o $PERFDIR/perf-sales-store-fk.data"
+		local CMD="$PERFCOMMAND -o $PERFDIR/perf-$TABLE-store-fk.data"
 	fi
 	$CMD $PSQL <<- __EOF__
-		ALTER TABLE sales
+		ALTER TABLE $TABLE
 		ADD FOREIGN KEY (store_id)
 		REFERENCES store (id);
 	__EOF__
 	RC=$?
 	if [ $RC -ne 0 ]; then
-		echo "error creating sales/store fk: $RC"
+		echo "error creating $TABLE/store fk: $RC"
 		exit 1
 	fi
 }
 
 constrain_sales_time()
 {
+	TABLE=$1
+
 	if [ $LINUXPERF -eq 1 ]; then
-		local CMD="$PERFCOMMAND -o $PERFDIR/perf-sales-time-fk.data"
+		local CMD="$PERFCOMMAND -o $PERFDIR/perf-$TABLE-time-fk.data"
 	fi
 	$CMD $PSQL <<- __EOF__
-		ALTER TABLE sales
+		ALTER TABLE $TABLE
 		ADD FOREIGN KEY (time_id)
 		REFERENCES time (id);
 	__EOF__
 	RC=$?
 	if [ $RC -ne 0 ]; then
-		echo "error creating sales/time fk: $RC"
+		echo "error creating $TABLE/time fk: $RC"
 		exit 1
 	fi
 }
 
 constrain_sales()
 {
-	constrain_sales_product &
-	local PID=$!
-	constrain_sales_store &
-	PID="$PID $!"
-	constrain_sales_time &
-	PID="$PID $!"
+	local PIDS=""
 
-	for P in $PID; do
+	if [ "x$PG_PARTITION" = "xinheritance" ]; then
+		for FILE in `ls $DATAFILE_PATH/sales-*.data`; do
+			local TABLE=`basename ${FILE%.*} | sed -e 's/-/_/g'`
+
+			constrain_sales_product $TABLE &
+			PIDS="$PIDS $!"
+			constrain_sales_store $TABLE &
+			PIDS="$PIDS $!"
+			constrain_sales_time $TABLE &
+			PIDS="$PIDS $!"
+		done
+	else
+		constrain_sales_product sales &
+		PIDS="$PIDS $!"
+		constrain_sales_store sales &
+		PIDS="$PIDS $!"
+		constrain_sales_time sales &
+		PIDS="$PIDS $!"
+	fi
+
+	for P in $PIDS; do
 		wait $P
 		if [ $? -ne 0 ]; then
 			exit 1
 		fi
 	done
+}
+
+load_sales_inheritance()
+{
+	local FILE=$1
+	local TABLE=$2
+
+	if [ $LINUXPERF -eq 1 ]; then
+		local CMD="$PERFCOMMAND -o $PERFDIR/perf-$TABLE.data"
+	fi
+
+	$CMD $PSQL <<- __EOF__
+		BEGIN;
+		TRUNCATE $TABLE;
+		COPY $TABLE FROM '$FILE';
+		COMMIT;
+	__EOF__
+	RC=$?
+	if [ $RC -ne 0 ]; then
+		echo "error loading $TABLE: $RC"
+		exit 1
+	fi
 }
 
 load_table()
@@ -146,7 +189,23 @@ load_product()
 
 load_sales()
 {
-	load_table sales
+	if [ "x$PG_PARTITION" = "xinheritance" ]; then
+		local PIDS=""
+		for FILE in `ls $DATAFILE_PATH/sales-*.data`; do
+			local TABLE=`basename ${FILE%.*} | sed -e 's/-/_/g'`
+			load_sales_inheritance $FILE $TABLE &
+			PIDS="$PIDS $!"
+		done
+
+		for P in $PIDS; do
+			wait $P
+			if [ $? -ne 0 ]; then
+				exit 1
+			fi
+		done
+	else
+		load_table sales
+	fi
 
 	$PSQL -c "VACUUM ANALYZE sales;"
 }
