@@ -11,7 +11,7 @@ usage() {
 	echo "  -y <int>   Number of years of data that will be generated"
 }
 
-create_child_tables() {
+create_partition() {
 	Y=0
 	while [ $Y -lt $YEARS ]; do
 		M=0
@@ -23,17 +23,25 @@ create_child_tables() {
 			TIME0=`$PSQL -c "SELECT EXTRACT(EPOCH FROM '$YEAR-$MONTH-01'::DATE);"`
 			TIME1=`$PSQL -c "SELECT EXTRACT(EPOCH FROM '$YEAR-$MONTH-01'::DATE + INTERVAL '1' MONTH);"`
 
-			$PSQL <<- __EOF__
-				CREATE TABLE $TABLENAME (
-					CHECK (time_id >= $TIME0 AND time_id < $TIME1)
-				) INHERITS (sales);
-			__EOF__
+			if [ "x$PG_PARTITION" = "xinheritance" ]; then
+				$PSQL <<- __EOF__
+					CREATE TABLE $TABLENAME (
+						CHECK (time_id >= $TIME0 AND time_id < $TIME1)
+					) INHERITS (sales);
+				__EOF__
 
-			if [ $GENERATE_DATA -eq 1 ]; then
-				for FILE in `ls $DATAFILE_PATH/sales.data*`; do
-					awk "(\$3 >= $TIME0 && \$3 < $TIME1) {print}" $FILE \
-							>> $DATAFILE_PATH/sales-$YEAR-$MONTH.data
-				done
+				if [ $GENERATE_DATA -eq 1 ]; then
+					for FILE in `ls $DATAFILE_PATH/sales.data*`; do
+						awk "(\$3 >= $TIME0 && \$3 < $TIME1) {print}" $FILE \
+								>> $DATAFILE_PATH/sales-$YEAR-$MONTH.data
+					done
+				fi
+			elif [ "x$PG_PARTITION" = "xnative" ]; then
+				$PSQL <<- __EOF__
+					CREATE TABLE $TABLENAME
+					PARTITION OF sales
+					FOR VALUES FROM ($TIME0) TO ($TIME1);
+				__EOF__
 			fi
 
 			M=$(( $M + 1 ))
@@ -74,14 +82,6 @@ CREATE TABLE product (
     category CHAR(20) NOT NULL
 );
 
-CREATE TABLE sales (
-    product_id BIGINT NOT NULL,
-    store_id BIGINT NOT NULL,
-    time_id BIGINT NOT NULL,
-    units INTEGER NOT NULL,
-    unit_price NUMERIC NOT NULL
-);
-
 CREATE TABLE store (
     id BIGINT NOT NULL,
     store_number BIGINT NOT NULL,
@@ -107,14 +107,44 @@ if [ $RC -ne 0 ]; then
 	exit 1
 fi
 
+if [ "x$PG_PARTITION" = "xnative" ]; then
+	$PSQL <<- __EOF__
+		CREATE TABLE sales (
+			product_id BIGINT NOT NULL,
+			store_id BIGINT NOT NULL,
+			time_id BIGINT NOT NULL,
+			units INTEGER NOT NULL,
+			unit_price NUMERIC NOT NULL
+		) PARTITION BY RANGE (time_id);
+		__EOF__
+	RC=$?
+else
+	$PSQL <<- __EOF__
+		CREATE TABLE sales (
+			product_id BIGINT NOT NULL,
+			store_id BIGINT NOT NULL,
+			time_id BIGINT NOT NULL,
+			units INTEGER NOT NULL,
+			unit_price NUMERIC NOT NULL
+		);
+	__EOF__
+	RC=$?
+fi
+if [ $RC -ne 0 ]; then
+	echo "ERROR: creating sales table $RC"
+	exit 1
+fi
+
+
 if [ -n "$PG_PARTITION" ]; then
 	if [ -z "$YEARS" ]; then
 		echo "ERROR: Expected years of data must be specified with -y"
 		exit 1
 	fi
 
-	if [ "x$PG_PARTITION" = "xinheritance" ]; then
-		create_child_tables
+	if [ "x$PG_PARTITION" = "xinheritance" ] || \
+			[ "x$PG_PARTITION" = "xnative" ]; then
+		create_partition
 	else
 		echo "ERROR: Unknown partitioning scheme: $PG_PARTITION"
 		exit 1
