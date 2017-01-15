@@ -15,25 +15,40 @@ usage() {
 	echo "Usage: `basename $0` <options>"
 	echo
 	echo "Options:"
+	echo "  -g         Flag to generate datafiles for table partitioning"
 	echo "  -h         This help message"
+	echo "  -i <path>  Path to data files"
 	echo "  -o <path>  Path to save results"
 	echo "  -P <str>   Database parameters"
+	echo "  -y <int>   Years of data expected to be generated"
 }
 
 FLAG_CHUNKS=""
+FLAG_DATAFILE_PATH=""
 FLAG_DBPARAMS=""
+FLAG_GENERATE_DATA=""
+FLAG_YEARS=""
 OUTDIR="."
-while getopts "ho:P:" OPT; do
+while getopts "ghi:o:P:y:" OPT; do
 	case $OPT in
+	g)
+		FLAG_GENERATE_DATA="-g"
+		;;
 	h)
 		usage
 		exit 0
+		;;
+	i)
+		FLAG_DATAFILE_PATH="-i $OPTARG"
 		;;
 	o)
 		OUTDIR=$OPTARG
 		;;
 	P)
 		FLAG_DBPARAMS="-P \"$OPTARG\""
+		;;
+	y)
+		FLAG_YEARS="-y $OPTARG"
 		;;
 	esac
 done
@@ -60,7 +75,8 @@ fi
 eval tsdss-pgsql-start $FLAG_DBPARAMS $FLAG_OUTDIR || exit 1
 dropdb --if-exists $PGDATABASE || exit 1
 createdb $PGDATABASE || exit 1
-tsdss-pgsql-create-tables || exit 1
+tsdss-pgsql-create-tables $FLAG_DATAFILE_PATH $FLAG_GENERATE_DATA \
+		$FLAG_YEARS || exit 1
 tsdss-pgsql-stop || exit 1
 
 exit 0
