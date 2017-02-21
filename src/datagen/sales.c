@@ -3,13 +3,15 @@
  */
 
 #include <stdio.h>
+#include <string.h>
+#include <time.h>
 
 #include "datagen.h"
 
 struct sales_t {
 	int64 product_id;
 	int64 store_id;
-	int64 time_id;
+	struct tm tm;
 	int64 units;
 	double unit_price;
 };
@@ -67,7 +69,11 @@ int write_sales_files(char *filename, struct df_t *df, long long start,
 	long long i;
 	FILE *output;
 
+	time_t tloc;
+
 	struct sales_t sales_t;
+
+	bzero(&sales_t.tm, sizeof(struct tm));
 
 	init_genrand64(df->seed);
 
@@ -76,7 +82,8 @@ int write_sales_files(char *filename, struct df_t *df, long long start,
 	for (i = 0; i < start; i++) {
 		getrand(1, df->products);
 		getrand(1, 50);
-		getrand(1, df->days);
+		getrand(0, df->days - 1);
+		getrand(0, 86399);
 		getGaussianRand(1, 10000, 5);
 		getrand(1, 10000000);
 	}
@@ -84,14 +91,31 @@ int write_sales_files(char *filename, struct df_t *df, long long start,
 	for (i = start; i < stop; i++) {
 		sales_t.product_id = getrand(1, df->products);
 		sales_t.store_id = getrand(1, 50);
-		sales_t.time_id = 978307200 + getrand(0, df->days - 1) * 86400;
+
+		tloc = 978307200 + getrand(0, df->days - 1) * 86400 +
+				getrand(0, 86399);
+		localtime_r(&tloc, &sales_t.tm);
+
 		sales_t.units = getGaussianRand(1, 10000, 5);
 		sales_t.unit_price = (double) getrand(1, 10000000) / 100.0;
 
-		fprintf(output, "%ld%c%ld%c%ld%c%ld%c%f\n",
+		fprintf(output, "%ld%c%ld%c%d-%02d-%d%c%d-%02d-%d %02d:%02d:%02d+00%c%ld%c%f\n",
 				sales_t.product_id, df->sep, /* product_id */
 				sales_t.store_id, df->sep, /* store_id */
-				sales_t.time_id, df->sep, /* time_id */
+
+				sales_t.tm.tm_year + 1900, /* year */
+				sales_t.tm.tm_mon + 1, /* month */
+				sales_t.tm.tm_mday, /* day of the month */
+				df->sep,
+
+				sales_t.tm.tm_year + 1900, /* year */
+				sales_t.tm.tm_mon + 1, /* month */
+				sales_t.tm.tm_mday, /* day of the month */
+				sales_t.tm.tm_hour, /* hour */
+				sales_t.tm.tm_min, /* minutes */
+				sales_t.tm.tm_sec, /* seconds */
+				df->sep,
+
 				sales_t.units, df->sep, /* units */
 				sales_t.unit_price / 100.0); /* unit_price */
 	}
