@@ -65,9 +65,8 @@ int gen_time_data(char *outdir, struct df_t *df)
 		}
 
 		fprintf(output,
-				"%lld%c%d-%d-%d%c%d%c%d%c%d%c%s%c%d%cQ%d%c%d\n",
-				(long long) tloc, df->sep, /* id */
-				year, tm.tm_mon + 1, tm.tm_mday, df->sep, /* date */
+				"%d-%d-%d%c%d%c%d%c%d%c%s%c%d%cQ%d%c%d\n",
+				year, tm.tm_mon + 1, tm.tm_mday, df->sep, /* id */
 				tm.tm_mday, df->sep, /* day of the month */
 				tm.tm_wday + 1, df->sep, /* day of the week */
 				tm.tm_mon + 1, df->sep, /* month */

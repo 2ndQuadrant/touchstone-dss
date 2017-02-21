@@ -90,8 +90,7 @@ CREATE TABLE store (
 );
 
 CREATE TABLE time (
-    id BIGINT NOT NULL,
-    date DATE NOT NULL,
+    id DATE NOT NULL,
     day SMALLINT NOT NULL,
     day_of_week SMALLINT NOT NULL,
     month SMALLINT NOT NULL,
@@ -107,26 +106,23 @@ if [ $RC -ne 0 ]; then
 	exit 1
 fi
 
+SQL_SALES="CREATE TABLE sales (
+    product_id BIGINT NOT NULL,
+    store_id BIGINT NOT NULL,
+    time_id DATE NOT NULL,
+	ts TIMESTAMP WITH TIME ZONE,
+    units INTEGER NOT NULL,
+    unit_price NUMERIC NOT NULL
+)"
+
 if [ "x$PG_PARTITION" = "xnative" ]; then
 	$PSQL <<- __EOF__
-		CREATE TABLE sales (
-			product_id BIGINT NOT NULL,
-			store_id BIGINT NOT NULL,
-			time_id BIGINT NOT NULL,
-			units INTEGER NOT NULL,
-			unit_price NUMERIC NOT NULL
-		) PARTITION BY RANGE (time_id);
+		$SQL_SALES PARTITION BY RANGE (time_id);
 		__EOF__
 	RC=$?
 else
 	$PSQL <<- __EOF__
-		CREATE TABLE sales (
-			product_id BIGINT NOT NULL,
-			store_id BIGINT NOT NULL,
-			time_id BIGINT NOT NULL,
-			units INTEGER NOT NULL,
-			unit_price NUMERIC NOT NULL
-		);
+		$SQL_SALES;
 	__EOF__
 	RC=$?
 fi
@@ -134,7 +130,6 @@ if [ $RC -ne 0 ]; then
 	echo "ERROR: creating sales table $RC"
 	exit 1
 fi
-
 
 if [ -n "$PG_PARTITION" ]; then
 	if [ -z "$YEARS" ]; then
