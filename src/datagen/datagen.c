@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 PostgreSQL Global Development Group
+ * Copyright 2016-2017 PostgreSQL Global Development Group
  */
 
 #include <stdio.h>
@@ -31,39 +31,10 @@ void usage(char *filename)
 	printf("    -y <int> - number of years of data to generate, default: 1\n");
 }
 
-int init_format(int data_format, struct df_t *df)
-{
-	int i;
-
-	/* For ease of testing, try to work with everything in GMT/UTC. */
-	putenv("TZ=\":GMT\"");
-
-	if (df->seed == -1) {
-		struct timeval tv;
-
-		gettimeofday(&tv, NULL);
-
-		df->seed = getpid();
-		df->seed ^= tv.tv_sec ^ tv.tv_usec;
-	}
-
-	for (i = 0; i < df->years; i++)
-		df->days += get_days(START_YEAR + i);
-
-	switch (data_format) {
-	case DATA_FORMAT_PGSQL:
-		df->sep = '\t';
-		break;
-	default:
-		return -1;
-	}
-	return 0;
-}
-
 int main(int argc, char *argv[])
 {
 	int c;
-	char outdir[OUTDIR_LEN + 1] = ".";
+	char outdir[DIR_LEN + 1] = ".";
 	int data_format = DATA_FORMAT_PGSQL;
 	struct df_t df;
 
@@ -101,7 +72,7 @@ int main(int argc, char *argv[])
 			df.chunk = atoi(optarg);
 			break;
 		case 'd':
-			strncpy(outdir, optarg, OUTDIR_LEN);
+			strncpy(outdir, optarg, DIR_LEN);
 			break;
 		case 'f':
 			if (strcmp("pgsql", optarg) == 0) {
