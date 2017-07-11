@@ -8,6 +8,7 @@ Table of Contents
   * [Sales Fact Table](#sales-fact-table)
   * [Store Dimension Table](#store-dimension-table)
   * [Time Dimension Table](#time-dimension-table)
+* [Query Descriptions](#query-descriptions)
 
 Table Descriptions
 ==================
@@ -104,4 +105,32 @@ quarter       SMALLINT    The quarter of the year (1-4)
 quarter_name  CHAR(2)     The name of the quarter (e.g. Q1)
 
 year          SMALLINT    The year
+-------------------------------------------------------------------------------
+
+Query Descriptions
+==================
+
+Q1
+--
+
+This query calculates the total revenue of all sales per state over a 1 year
+interval.
+
+~~~sql
+SELECT state, sum(units * unit_price)
+FROM sales, store
+WHERE sales.store_id = store.id
+  AND cast(ts AS DATE) >= ':1'
+  AND cast(ts AS DATE) < cast(':1' AS DATE) + INTERVAL '1 YEAR'
+GROUP BY state
+ORDER BY state;
+~~~
+
+: Q1 Variables
+
+-------------------------------------------------------------------------------
+Variable  Description
+--------- ---------------------------------------------------------------------
+1         A random date from the first day of year up to the year prior to the
+          range of data generated.
 -------------------------------------------------------------------------------

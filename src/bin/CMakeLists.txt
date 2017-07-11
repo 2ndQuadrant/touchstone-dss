@@ -1,8 +1,14 @@
-SET(DATAGEN_FILES ../datagen/datagen.c ../datagen/product.c ../datagen/sales.c
-		../datagen/store.c ../datagen/time.c)
+SET(DATAGEN_FILES ../common.c ../datagen/datagen.c ../datagen/product.c
+		../datagen/sales.c ../datagen/store.c ../datagen/time.c)
+SET(QUERYGEN_FILES ../common.c ../querygen/querygen.c)
 SET_SOURCE_FILES_PROPERTIES(${DATAGEN_FILES} COMPILE_FLAGS "-I../include")
+SET_SOURCE_FILES_PROPERTIES(${QUERYGEN_FILES} COMPILE_FLAGS "-I../include")
 ADD_EXECUTABLE(${PROJECT_NAME}-datagen ${DATAGEN_FILES})
+ADD_EXECUTABLE(${PROJECT_NAME}-querygen ${QUERYGEN_FILES})
 SET_TARGET_PROPERTIES(${PROJECT_NAME}-datagen PROPERTIES LINK_FLAGS
+		"-ltouchstone")
+SET_TARGET_PROPERTIES(${PROJECT_NAME}-querygen PROPERTIES LINK_FLAGS
 		"-ltouchstone")
 
 INSTALL(PROGRAMS ${PROJECT_NAME}-datagen DESTINATION "${INSTALLDEST}/bin")
+INSTALL(PROGRAMS ${PROJECT_NAME}-querygen DESTINATION "${INSTALLDEST}/bin")
