@@ -9,18 +9,13 @@ STOREFILE="store.data"
 TIMEFILE="time.data"
 
 oneTimeSetUp() {
-	TMPDIR=`mktemp -d`
-
-	../bin/tsdss-datagen -d $TMPDIR
+	export PATH=$PWD/../bin:$PWD/../scripts:$PWD/../scripts/pgsql:$PATH
+	tsdss-datagen -d $SHUNIT_TMPDIR
 	assertEquals "create all data files" 0 $?
 }
 
-oneTimeTearDown() {
-	rm -rf $TMPDIR
-}
-
 testProductDataExists() {
-	if [[ -f $TMPDIR/$PRODUCTFILE ]]; then
+	if [[ -f "$SHUNIT_TMPDIR/$PRODUCTFILE" ]]; then
 		RC=1
 	else
 		RC=0
@@ -29,11 +24,11 @@ testProductDataExists() {
 }
 
 testProductDataOnly() {
-	mkdir $TMPDIR/p
-	../bin/tsdss-datagen -d $TMPDIR/p -t product
+	mkdir $SHUNIT_TMPDIR/p
+	tsdss-datagen -d $SHUNIT_TMPDIR/p -t product
 	assertEquals "create product data file" 0 $?
 
-	if [[ -f $TMPDIR/p/$PRODUCTFILE ]]; then
+	if [[ -f "$SHUNIT_TMPDIR/p/$PRODUCTFILE" ]]; then
 		RC=1
 	else
 		RC=0
@@ -42,12 +37,12 @@ testProductDataOnly() {
 }
 
 testProductDataRows() {
-	C=`wc -l $TMPDIR/$PRODUCTFILE | cut -d " " -f 1`
+	C=`wc -l $SHUNIT_TMPDIR/$PRODUCTFILE | cut -d " " -f 1`
 	assertEquals "Check number of rows in $PRODUCTFILE" 1 $C
 }
 
 testSalesDataExists() {
-	if [[ -f $TMPDIR/$SALESFILE ]]; then
+	if [[ -f "$SHUNIT_TMPDIR/$SALESFILE" ]]; then
 		RC=1
 	else
 		RC=0
@@ -56,11 +51,11 @@ testSalesDataExists() {
 }
 
 testSalesDataOnly() {
-	mkdir $TMPDIR/l
-	../bin/tsdss-datagen -d $TMPDIR/l -t sales
+	mkdir $SHUNIT_TMPDIR/l
+	tsdss-datagen -d $SHUNIT_TMPDIR/l -t sales
 	assertEquals "create sales data file" 0 $?
 
-	if [[ -f $TMPDIR/l/$SALESFILE ]]; then
+	if [[ -f "$SHUNIT_TMPDIR/l/$SALESFILE" ]]; then
 		RC=1
 	else
 		RC=0
@@ -69,7 +64,7 @@ testSalesDataOnly() {
 }
 
 testStoreDataExists() {
-	if [[ -f $TMPDIR/$STOREFILE ]]; then
+	if [[ -f "$SHUNIT_TMPDIR/$STOREFILE" ]]; then
 		RC=1
 	else
 		RC=0
@@ -78,11 +73,11 @@ testStoreDataExists() {
 }
 
 testStoreDataOnly() {
-	mkdir $TMPDIR/s
-	../bin/tsdss-datagen -d $TMPDIR/s -t store
+	mkdir $SHUNIT_TMPDIR/s
+	tsdss-datagen -d $SHUNIT_TMPDIR/s -t store
 	assertEquals "create store data file" 0 $?
 
-	if [[ -f $TMPDIR/s/$STOREFILE ]]; then
+	if [[ -f "$SHUNIT_TMPDIR/s/$STOREFILE" ]]; then
 		RC=1
 	else
 		RC=0
@@ -91,12 +86,12 @@ testStoreDataOnly() {
 }
 
 testStoreDataRows() {
-	C=`wc -l $TMPDIR/$STOREFILE | cut -d " " -f 1`
+	C=`wc -l $SHUNIT_TMPDIR/$STOREFILE | cut -d " " -f 1`
 	assertEquals "Check number of rows in $STOREFILE" 50 $C
 }
 
 testTimeDataExists() {
-	if [[ -f $TMPDIR/$TIMEFILE ]]; then
+	if [[ -f "$SHUNIT_TMPDIR/$TIMEFILE" ]]; then
 		RC=1
 	else
 		RC=0
@@ -105,11 +100,11 @@ testTimeDataExists() {
 }
 
 testTimeDataOnly() {
-	mkdir $TMPDIR/t
-	../bin/tsdss-datagen -d $TMPDIR/t -t time
+	mkdir $SHUNIT_TMPDIR/t
+	tsdss-datagen -d $SHUNIT_TMPDIR/t -t time
 	assertEquals "create time data file" 0 $?
 
-	if [[ -f $TMPDIR/t/$TIMEFILE ]]; then
+	if [[ -f "$SHUNIT_TMPDIR/t/$TIMEFILE" ]]; then
 		RC=1
 	else
 		RC=0
@@ -118,7 +113,7 @@ testTimeDataOnly() {
 }
 
 testTimeDataRows() {
-	C=`wc -l $TMPDIR/$TIMEFILE | cut -d " " -f 1`
+	C=`wc -l $SHUNIT_TMPDIR/$TIMEFILE | cut -d " " -f 1`
 	assertEquals "Check number of rows in $TIMEFILE" 365 $C
 }
 

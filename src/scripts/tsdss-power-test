@@ -1,0 +1,194 @@
+#!/bin/bash
+#
+# Copyright 2017 PostgreSQL Global Development Group
+#
+
+trap 'cleanup' EXIT
+
+usage() {
+	echo "Usage: `basename $0` <options>"
+	echo
+	echo "Options:"
+	echo "  -a         Execute queries for db analysis instead of queryresults"
+	echo "  -D <str>   Database management system to test: pgsql"
+	echo "  -h         This help message"
+	echo "  -o <path>  Path to save results"
+	echo "  -L         Enable Linux perf profiling"
+	echo "  -P <str>   Database parameters"
+	echo "  -p <int>   Number of products generated, default 1"
+	echo "  -s <int>   Gibibytes of sales data generated, default 1"
+	echo "  -t <path>  Query template directory"
+	echo "  -y <int>   Number of years of data generated, default 1"
+}
+
+cleanup() {
+	if [ $? -ne 0 ]; then
+		tsdss-sysstat -o $OUTDIR -s
+		tsdss-$DBMS-stat -o $OUTDIR -s
+	fi
+}
+
+execute_query() {
+	local FILE=$1
+	local Q=$2
+	local PROFILE=$3
+
+	local OUTDIR=`dirname $FILE`
+
+	if [ $DBMS = "pgsql" ] || [ $DBMS = "pgxl" ]; then
+		local CMD="psql -v ON_ERROR_STOP=1 -X -f $FILE -o $OUTDIR/r$Q.txt"
+	fi
+
+	if [ $PROFILE -eq 1 ]; then
+		if [ $USE_LINUXPERF -eq 1 ]; then
+			PERFDIR="$OUTDIR/perf"
+			mkdir -p $PERFDIR
+			CMD="$PERFCMD -o $PERFDIR/perf-q$Q.data $CMD"
+		fi
+	fi
+
+	eval $CMD
+	if [ $RC -ne 0 ]; then
+		echo "ERROR: $RC"
+		echo "       $CMD"
+		exit 1
+	fi
+}
+
+ANALYZE=0
+DBMS=""
+FLAG_DBPARAMS=""
+FLAG_GENERATE_DATA=""
+FLAG_OUTDIR=""
+PERFCMD=""
+PRODUCTS=1
+SCALE_FACTOR=1
+TEMPLATEDIR=""
+YEARS=1
+USE_LINUXPERF=0
+
+while getopts "aD:h:Lo:P:p:s:t:y:" OPT; do
+	case $OPT in
+	a)
+		ANALYZE=1
+		;;
+	D)
+		DBMS=$OPTARG
+		;;
+	h)
+		usage
+		exit 0
+		;;
+	L)
+		USE_LINUXPERF=1
+		PERFCMD="perf record -a -g -s"
+		;;
+	o)
+		OUTDIR="$OPTARG/power"
+		FLAG_OUTDIR="-o $OUTDIR"
+		mkdir -p $OUTDIR
+		;;
+	P)
+		FLAG_DBPARAMS="-P \"$OPTARG\""
+		;;
+	p)
+		PRODUCTS=$OPTARG
+		;;
+	s)
+		SCALE_FACTOR=$OPTARG
+		;;
+	t)
+		TEMPLATEDIR=$OPTARG
+		;;
+	y)
+		YEARS=$OPTARG
+		;;
+	esac
+done
+
+if [ "x$DBMS" = "x" ]; then
+	echo "ERROR: specify DBMS to test"
+	exit 1
+fi
+
+eval tsdss-$DBMS-start $FLAG_DBPARAMS $FLAG_OUTDIR || exit 1
+
+QUERYCMD="tsdss-querygen -c $TEMPLATEDIR/$DBMS.conf -f $DBMS -i $TEMPLATEDIR"
+
+echo "Generating plans..."
+
+PLANDIR="$OUTDIR/plans"
+mkdir -p $PLANDIR || exit 1
+
+QUERYCMDp="$QUERYCMD -o $PLANDIR -p"
+eval $QUERYCMDp
+RC=$?
+if [ $RC -ne 0 ]; then
+	echo "ERROR: did not generate plans"
+	echo "ERROR: tsdss-querygen: $RC"
+	echo "       $QUERYCMDp"
+	exit 1
+fi
+
+i=1
+while [ $i -le 1 ]; do
+	FILE="$PLANDIR/q$i-??.sql"
+	[[ `basename $FILE` =~ q[0-9]-([0-9]+).sql ]]
+	execute_query $FILE `printf "%d" ${BASH_REMATCH[1]}` 0
+	i=$(( $i + 1 ))
+done
+
+echo "Generating queries..."
+
+QUERYDIR="$OUTDIR/queries"
+mkdir -p $QUERYDIR || exit 1
+
+QUERYCMDe="$QUERYCMD -o $QUERYDIR"
+if [ $ANALYZE -eq 1 ]; then
+	QUERYCMDe="$QUERYCMDe -a"
+fi
+eval $QUERYCMDe
+RC=$?
+if [ $RC -ne 0 ]; then
+	echo "ERROR: did not generate queries"
+	echo "ERROR: tsdss-querygen: $RC"
+	echo "       $QUERYCMDe"
+	exit 1
+fi
+
+echo "Starting power test..."
+
+tsdss-sysstat -o $OUTDIR
+tsdss-$DBMS-stat -o $OUTDIR
+
+QTIMEFILE=$OUTDIR/q_time.csv
+echo "query,seconds" > $QTIMEFILE
+
+TIME0=`date +%s`
+i=1
+while [ $i -le 1 ]; do
+	FILE="$QUERYDIR/q$i-??.sql"
+
+	[[ `basename $FILE` =~ q[0-9]-([0-9]+).sql ]]
+	Q=`printf "%d" ${BASH_REMATCH[1]}`
+
+	QTIME0=`date +%s`
+	execute_query $FILE $Q 1
+	QTIME1=`date +%s`
+	echo "$Q,$(( $QTIME1 - $QTIME0 ))" >> $QTIMEFILE
+	i=$(( $i + 1 ))
+done
+TIME1=`date +%s`
+
+tsdss-sysstat -o $OUTDIR -s
+tsdss-$DBMS-stat -o $OUTDIR -s
+
+tsdss-$DBMS-stop || exit 1
+
+POWERTIMEFILE="$OUTDIR/results.txt"
+echo $(( $TIME1 - $TIME0 )) > $POWERTIMEFILE
+echo "Power Test Time: `cat $POWERTIMEFILE` seconds"
+
+echo "Power test complete."
+
+exit 0

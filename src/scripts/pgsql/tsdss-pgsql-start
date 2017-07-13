@@ -40,10 +40,12 @@ if [ -f "$PGDATA/postmaster.pid" ]; then
 	exit 0
 fi
 
-eval pg_ctl -w -D $PGDATA $FLAG_DBPARAMS -l $OUTDIR/$LOGFILE start
+CMD="pg_ctl -w -D $PGDATA $FLAG_DBPARAMS -l $OUTDIR/$LOGFILE start"
+eval $CMD
 
 if [ ! -f "$PGDATA/postmaster.pid" ]; then
 	echo "ERROR: PostgreSQL did not start correctly, check database log"
+	echo "       $CMD"
 	exit 1
 fi
 

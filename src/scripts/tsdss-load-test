@@ -90,11 +90,13 @@ fi
 
 if [ $GENERATE_DATA -eq 1 ]; then
 	echo "Generating data files..."
-	tsdss-datagen -d $DATAFILE_PATH -c $CHUNKS -p $PRODUCTS -s $SCALE_FACTOR \
-			-y $YEARS
+	DATAGENCMD="tsdss-datagen -d $DATAFILE_PATH -c $CHUNKS -p $PRODUCTS "
+	DATAGENCMD="$DATAGENCMD -s $SCALE_FACTOR -y $YEARS"
+	eval $DATAGENCMD
 	RC=$?
 	if [ $RC -ne 0 ]; then
 		echo "ERROR: tsdss-datagen $RC"
+		echo "       $DATAGENCMD"
 		exit 1
 	fi
 fi

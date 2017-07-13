@@ -1,0 +1,2 @@
+export PGDATABASE=tsdss
+export PGDATA=/tmp/pgdata
