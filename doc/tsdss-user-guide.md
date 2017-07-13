@@ -14,11 +14,12 @@ Quick Start
 
 Only one command needs to be issued to run a complete test:
 
-    tsdss-run-workload -D pgsql -o /tmp/results -g
+    tsdss-run-workload -D pgsql -o /tmp/results -t queries/pgsql -g
 
-This will run the generate the data files for a default sized 1GB scale factor
-database load with PostgreSQL and record the results of the test in
-_/tmp/results_.
+This will run the generate the data files (`-g`) for a default sized 1GB scale
+factor database load with PostgreSQL and record the results of the test in
+_/tmp/results_.  The templates in _queries/pgsql_ will also be used for the
+query power test.
 
 Database Management Systems Specific Notes
 ==========================================

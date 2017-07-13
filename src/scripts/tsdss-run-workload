@@ -7,6 +7,7 @@ usage() {
 	echo "Usage: `basename $0` <options>"
 	echo
 	echo "Options:"
+	echo "  -a         Execute queries for db analysis instead of queryresults"
 	echo "  -C <int>   Number of sales data file segments to generate, default 1"
 	echo "  -D <str>   Database management system to test: pgsql"
 	echo "  -g         Generate data files"
@@ -17,22 +18,37 @@ usage() {
 	echo "  -P <str>   Database parameters"
 	echo "  -p <int>   Number of products to generate, default 1"
 	echo "  -s <int>   Gibibytes of sales data to generate, default 1"
+	echo "  -t <path>  Query template directory"
 	echo "  -y <int>   Number of years of data to generate, default 1"
 }
 
 CHUNKS=1
-DATAFILE_PATH="."
+DATAFILE_PATH="/tmp" # Some programs require absolute path.
 DBMS=""
+FLAG_ANALYZE=""
 FLAG_DBPARAMS=""
 FLAG_GENERATE_DATA=""
 FLAG_LINUXPERF=""
 OUTDIR=""
 PRODUCTS=1
 SCALE_FACTOR=1
+TEMPLATE_DIR=""
+TEST_ALL=1
 YEARS=1
 
-while getopts "C:D:ghi:Lo:P:p:s:y:" OPT; do
+while getopts "12aC:D:ghi:Lo:P:p:s:t:y:" OPT; do
 	case $OPT in
+	1)
+		TEST_ALL=0
+		TEST_LOAD=1
+		;;
+	2)
+		TEST_ALL=0
+		TEST_POWER=1
+		;;
+	a)
+		FLAG_ANALYZE="-a"
+		;;
 	C)
 		CHUNKS=$OPTARG
 		;;
@@ -56,7 +72,7 @@ while getopts "C:D:ghi:Lo:P:p:s:y:" OPT; do
 		OUTDIR=$OPTARG
 		if [ -d $OUTDIR ]; then
 			echo "Results directory already exists: $OUTDIR"
-			exit 1
+			exit 2
 		fi
 		mkdir -p $OUTDIR
 		;;
@@ -68,6 +84,9 @@ while getopts "C:D:ghi:Lo:P:p:s:y:" OPT; do
 		;;
 	s)
 		SCALE_FACTOR=$OPTARG
+		;;
+	t)
+		TEMPLATE_DIR=$OPTARG
 		;;
 	y)
 		YEARS=$OPTARG
@@ -85,6 +104,26 @@ if [ "x$OUTDIR" = "x" ]; then
 	exit 1
 fi
 
+# Check for DBMS specific environment variables.
+if [ "x$DBMS" = "xpgsql" ]; then
+	if [ -z $PGDATA ]; then
+		echo "ERROR: PGDATA not defined."
+		exit 3
+	fi
+	if [ -z $PGDATABASE ]; then
+		echo "ERROR: PGDATABASE not defined."
+		exit 3
+	fi
+fi
+
+# Check for test specific settings.
+if [ $TEST_ALL -eq 1 ] || [ $TEST_POWER -eq 1 ]; then
+	if [ -z $TEMPLATE_DIR ]; then
+		echo "ERROR: specify $DBMS template directory with -t"
+		exit 4
+	fi
+fi
+
 README="$OUTDIR/readme.txt"
 
 echo "Test paramters:"
@@ -95,13 +134,32 @@ echo "  Years: $YEARS" >> $README
 cat $README
 echo "  Command line arguments: $@" >> $README
 
-eval tsdss-load-test -D $DBMS -i $DATAFILE_PATH -C $CHUNKS -s $SCALE_FACTOR \
-		-p $PRODUCTS -y $YEARS -o $OUTDIR $FLAG_DBPARAMS $FLAG_GENERATE_DATA \
-		$FLAG_LINUXPERF
-RC=$?
-if [ $RC -ne 0 ]; then
-	echo "ERROR: tsdss-datagen $RC"
-	exit 1
+if [ $TEST_ALL -eq 1 ] || [ $TEST_LOAD -eq 1 ]; then
+	LOADCMD="tsdss-load-test -D $DBMS -i $DATAFILE_PATH -C $CHUNKS "
+	LOADCMD="$LOADCMD -s $SCALE_FACTOR -p $PRODUCTS -y $YEARS -o $OUTDIR "
+	LOADCMD="$LOADCMD $FLAG_DBPARAMS $FLAG_GENERATE_DATA $FLAG_LINUXPERF"
+
+	eval $LOADCMD
+	RC=$?
+	if [ $RC -ne 0 ]; then
+		echo "ERROR: tsdss-load-test $RC"
+		echo "       $LOADCMD"
+		exit 1
+	fi
+fi
+
+if [ $TEST_ALL -eq 1 ] || [ $TEST_POWER -eq 1 ]; then
+	POWERCMD="tsdss-power-test -D $DBMS -t $TEMPLATE_DIR -s $SCALE_FACTOR "
+	POWERCMD="$POWERCMD -p $PRODUCTS -y $YEARS -o $OUTDIR $FLAG_DBPARAMS "
+	POWERCMD="$POWERCMD $FLAG_ANALYZE $FLAG_LINUXPERF"
+
+	eval $POWERCMD
+	RC=$?
+	if [ $RC -ne 0 ]; then
+		echo "ERROR: tsdss-power-test $RC"
+		echo "       $POWERCMD"
+		exit 1
+	fi
 fi
 
 echo "Post processing results..."

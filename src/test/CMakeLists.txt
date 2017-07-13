@@ -1,4 +1,7 @@
 ADD_TEST(datagen sh datagen.sh)
 ADD_TEST(datagen-sales-chunking sh datagen-sales-chunking.sh)
-ADD_TEST(postgresql sh postgresql.sh)
+ADD_TEST(postgresql-args sh postgresql-args.sh)
+ADD_TEST(postgresql-data sh postgresql-data.sh)
+ADD_TEST(postgresql-workload sh postgresql-workload.sh)
 ADD_TEST(querygen sh querygen.sh)
+ADD_TEST(workload sh workload.sh)
