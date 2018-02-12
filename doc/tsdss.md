@@ -55,6 +55,8 @@ time_id     BIGINT   Foreign Key
 units       INTEGER  Units sold
 
 unit_price  NUMERIC  Price per unit
+
+vat         NUMERIC  Value add tax
 ------------------------------------
 
 Store Dimension Table

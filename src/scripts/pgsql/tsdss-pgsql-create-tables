@@ -112,7 +112,8 @@ SQL_SALES="CREATE TABLE sales (
     time_id DATE NOT NULL,
 	ts TIMESTAMP WITH TIME ZONE,
     units INTEGER NOT NULL,
-    unit_price NUMERIC NOT NULL
+    unit_price NUMERIC NOT NULL,
+    vat NUMERIC NOT NULL
 )"
 
 if [ "x$PG_PARTITION" = "xnative" ]; then

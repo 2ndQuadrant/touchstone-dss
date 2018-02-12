@@ -14,6 +14,7 @@ struct sales_t {
 	struct tm tm;
 	int64 units;
 	double unit_price;
+	double vat;
 };
 
 int write_sales_files(char *, struct df_t *, long long, long long);
@@ -86,6 +87,7 @@ int write_sales_files(char *filename, struct df_t *df, long long start,
 		getrand(0, 86399);
 		getGaussianRand(1, 10000, 5);
 		getrand(1, 10000000);
+		getrand(0, 100);
 	}
 
 	for (i = start; i < stop; i++) {
@@ -98,8 +100,9 @@ int write_sales_files(char *filename, struct df_t *df, long long start,
 
 		sales_t.units = getGaussianRand(1, 10000, 5);
 		sales_t.unit_price = (double) getrand(1, 10000000) / 100.0;
+		sales_t.vat = (double) getrand(0, 100) / 100.0;
 
-		fprintf(output, "%ld%c%ld%c%d-%02d-%d%c%d-%02d-%d %02d:%02d:%02d+00%c%ld%c%f\n",
+		fprintf(output, "%ld%c%ld%c%d-%02d-%d%c%d-%02d-%d %02d:%02d:%02d+00%c%ld%c%f%c%f\n",
 				sales_t.product_id, df->sep, /* product_id */
 				sales_t.store_id, df->sep, /* store_id */
 
@@ -117,7 +120,8 @@ int write_sales_files(char *filename, struct df_t *df, long long start,
 				df->sep,
 
 				sales_t.units, df->sep, /* units */
-				sales_t.unit_price / 100.0); /* unit_price */
+				sales_t.unit_price / 100.0, df->sep, /* unit_price */
+				sales_t.vat); /* vat */
 	}
 
 	fclose(output);
