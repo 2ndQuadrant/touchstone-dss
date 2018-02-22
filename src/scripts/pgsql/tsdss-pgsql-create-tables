@@ -79,7 +79,7 @@ CREATE TABLE product (
     ean CHAR(13) NOT NULL,
     name CHAR(20) NOT NULL,
     brand CHAR(20) NOT NULL,
-    category CHAR(20) NOT NULL
+    category CHAR(15) NOT NULL
 );
 
 CREATE TABLE store (

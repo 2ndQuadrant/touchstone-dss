@@ -8,6 +8,10 @@
 
 #include "common.h"
 
+const char *category[] = { "aran", "bulky", "cobweb", "dk", "fingering",
+		"jumbo", "lace", "light fingering", "sport", "super bulky", "thread",
+		"worsted" };
+
 int init_format(int data_format, struct df_t *df)
 {
 	int i;

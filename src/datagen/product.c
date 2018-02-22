@@ -80,7 +80,6 @@ int gen_product_data(char *outdir, struct df_t *df)
 
 	char name[21];
 	char brand[21];
-	char category[21];
 
 	snprintf(filename, FILENAME_LEN, "%s/%s", outdir, DATAFILE_PRODUCT);
 	output = fopen(filename, "w");
@@ -90,7 +89,6 @@ int gen_product_data(char *outdir, struct df_t *df)
 	for (i = 0; i < df->products; i++) {
 		get_alpha(name, 1, 20);
 		get_alpha(brand, 1, 20);
-		get_alpha(category, 1, 20);
 
 		fprintf(output,
 				"%d%c%03d%05d%03d%d%c%s%c%s%c%s\n",
@@ -101,7 +99,7 @@ int gen_product_data(char *outdir, struct df_t *df)
 				(int) getrand(0, 9),  df->sep, /* ean check digit */
 				name, df->sep, /* name */
 				brand, df->sep, /* brand */
-				category /* category */
+				category[(int) getrand(0, CATEGORY_MAX - 1)] /* category */
 				);
 	}
 	fclose(output);

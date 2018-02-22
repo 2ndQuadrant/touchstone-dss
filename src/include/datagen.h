@@ -17,6 +17,9 @@
 #define DATAFILE_STORE "store.data"
 #define DATAFILE_TIME "time.data"
 
+#define CATEGORY_MAX 12
+#define CATEGORY_LEN 15
+
 int gen_product_data(char *, struct df_t *);
 int gen_sales_data(char *, struct df_t *);
 int gen_store_data(char *, struct df_t *);
