@@ -130,8 +130,10 @@ if [ $RC -ne 0 ]; then
 	exit 1
 fi
 
+QUERIES=`ls $PLANDIR/*.sql | wc -l`
+
 i=1
-while [ $i -le 1 ]; do
+while [ $i -le $QUERIES ]; do
 	FILE="$PLANDIR/q$i-??.sql"
 	[[ `basename $FILE` =~ q[0-9]-([0-9]+).sql ]]
 	execute_query $FILE `printf "%d" ${BASH_REMATCH[1]}` 0
@@ -166,7 +168,7 @@ echo "query,seconds" > $QTIMEFILE
 
 TIME0=`date +%s`
 i=1
-while [ $i -le 1 ]; do
+while [ $i -le $QUERIES ]; do
 	FILE="$QUERYDIR/q$i-??.sql"
 
 	[[ `basename $FILE` =~ q[0-9]-([0-9]+).sql ]]

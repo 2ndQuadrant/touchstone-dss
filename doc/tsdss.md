@@ -136,3 +136,27 @@ Variable  Description
 1         A random date from the first day of year up to the year prior to the
           range of data generated.
 -------------------------------------------------------------------------------
+
+Q2
+--
+
+This query calculates the total revenue of a product category per year.
+
+~~~sql
+SELECT state, year, sum(units * units_price)
+FROM sales, store, time, product
+WHERE sales.store_id = store.id
+  AND sales.product_id = produce.id
+  AND sales.time_id = time.id
+  AND product.category = ':1'
+GROUP BY state, year
+ORDER BY state, year;
+~~~
+
+: Q2 Variables
+
+-------------------------------------------------------------------------------
+Variable  Description
+--------- ---------------------------------------------------------------------
+1         A randomly selected product category.
+-------------------------------------------------------------------------------

@@ -14,8 +14,9 @@
 #include "datagen.h"
 
 #define Q1VARS 1
+#define Q2VARS 1
 
-#define TOTAL_QUERIES 1
+#define TOTAL_QUERIES 2
 
 int dss_generate_query(int, int, char *, char *, char *, int, int,
 		struct df_t *);
@@ -43,6 +44,11 @@ int dss_query_values(int q, struct query_t *qt, struct df_t *df)
 		localtime_r(&tloc, &tm);
 		snprintf(qt->var[0], 11, "%04d-%02d-%02d", tm.tm_year + 1900,
 				tm.tm_mon + 1, tm.tm_mday);
+		break;
+	case 2:
+		qt->vars = Q2VARS;
+		strncpy(qt->var[0], category[(int) getrand(0, CATEGORY_MAX - 1)],
+				CATEGORY_LEN);
 		break;
 	default:
 		printf("unknown query: %d\n", q);
