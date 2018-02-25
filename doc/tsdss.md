@@ -160,3 +160,27 @@ Variable  Description
 --------- ---------------------------------------------------------------------
 1         A randomly selected product category.
 -------------------------------------------------------------------------------
+
+Q3
+--
+
+~~~sql
+SELECT category, brand, count(DISTINCT state)
+FROM sales, store, product
+WHERE sales.store_id = store.id
+  AND sales.product_id = produce.id
+  AND product.category <> :1
+  AND product.brand NOT LIKE ':2%'
+GROUP BY category, brand
+ORDER BY category, brand;
+~~~
+
+: Q3 Variables
+
+-------------------------------------------------------------------------------
+Variable  Description
+--------- ---------------------------------------------------------------------
+1         A randomly selected product category.
+
+2         A randomly selected product brand.
+-------------------------------------------------------------------------------

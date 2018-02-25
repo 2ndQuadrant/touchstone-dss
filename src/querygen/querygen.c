@@ -15,8 +15,9 @@
 
 #define Q1VARS 1
 #define Q2VARS 1
+#define Q3VARS 2
 
-#define TOTAL_QUERIES 2
+#define TOTAL_QUERIES 3
 
 int dss_generate_query(int, int, char *, char *, char *, int, int,
 		struct df_t *);
@@ -49,6 +50,12 @@ int dss_query_values(int q, struct query_t *qt, struct df_t *df)
 		qt->vars = Q2VARS;
 		strncpy(qt->var[0], category[(int) getrand(0, CATEGORY_MAX - 1)],
 				CATEGORY_LEN);
+		break;
+	case 3:
+		qt->vars = Q3VARS;
+		strncpy(qt->var[0], category[(int) getrand(0, CATEGORY_MAX - 1)],
+				CATEGORY_LEN);
+		strncpy(qt->var[1], brand[(int) getrand(0, BRAND_MAX - 1)], BRAND_LEN);
 		break;
 	default:
 		printf("unknown query: %d\n", q);
