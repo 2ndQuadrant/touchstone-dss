@@ -24,8 +24,8 @@ usage() {
 
 cleanup() {
 	if [ $? -ne 0 ]; then
-		tsdss-sysstat -o $OUTDIR -s
-		tsdss-$DBMS-stat -o $OUTDIR -s
+		ts-sysstat -o $OUTDIR -s
+		ts-$DBMS-stat -o $OUTDIR -s
 	fi
 }
 
@@ -114,16 +114,16 @@ fi
 
 eval tsdss-$DBMS-start $FLAG_DBPARAMS $FLAG_OUTDIR || exit 1
 
-tsdss-sysstat -o $OUTDIR
-tsdss-$DBMS-stat -o $OUTDIR
+ts-sysstat -o $OUTDIR
+ts-$DBMS-stat -o $OUTDIR
 TIME0=`date +%s`
 
 tsdss-$DBMS-load-data -C $CHUNKS -i $DATAFILE_PATH $FLAG_OUTDIR \
 		$FLAG_LINUXPERF || exit 1
 
 TIME1=`date +%s`
-tsdss-sysstat -o $OUTDIR -s
-tsdss-$DBMS-stat -o $OUTDIR -s
+ts-sysstat -o $OUTDIR -s
+ts-$DBMS-stat -o $OUTDIR -s
 
 tsdss-$DBMS-stop || exit 1
 

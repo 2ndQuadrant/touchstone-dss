@@ -23,8 +23,8 @@ usage() {
 
 cleanup() {
 	if [ $? -ne 0 ]; then
-		tsdss-sysstat -o $OUTDIR -s
-		tsdss-$DBMS-stat -o $OUTDIR -s
+		ts-sysstat -o $OUTDIR -s
+		ts-$DBMS-stat -o $OUTDIR -s
 	fi
 }
 
@@ -160,8 +160,8 @@ fi
 
 echo "Starting power test..."
 
-tsdss-sysstat -o $OUTDIR
-tsdss-$DBMS-stat -o $OUTDIR
+ts-sysstat -o $OUTDIR
+ts-$DBMS-stat -o $OUTDIR
 
 QTIMEFILE=$OUTDIR/q_time.csv
 echo "query,seconds" > $QTIMEFILE
@@ -182,8 +182,8 @@ while [ $i -le $QUERIES ]; do
 done
 TIME1=`date +%s`
 
-tsdss-sysstat -o $OUTDIR -s
-tsdss-$DBMS-stat -o $OUTDIR -s
+ts-sysstat -o $OUTDIR -s
+ts-$DBMS-stat -o $OUTDIR -s
 
 tsdss-$DBMS-stop || exit 1
 
