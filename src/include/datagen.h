@@ -17,6 +17,9 @@
 #define DATAFILE_STORE "store.data"
 #define DATAFILE_TIME "time.data"
 
+#define BRAND_MAX 111
+#define BRAND_LEN 32
+
 #define CATEGORY_MAX 12
 #define CATEGORY_LEN 15
 

@@ -27,6 +27,7 @@ struct df_t
 	int years;
 };
 
+extern const char *brand[];
 extern const char *category[];
 
 int init_format(int, struct df_t *);
