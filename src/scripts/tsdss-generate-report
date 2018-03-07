@@ -1,0 +1,101 @@
+#!/bin/sh
+#
+# Copyright 2018 PostgreSQL Global Development Group
+#
+
+usage() {
+	echo "Usage: `basename $0` <options>"
+	echo
+	echo "Options:"
+	echo "  -i <directory>  results directory"
+}
+
+while getopts "hi:" OPT; do
+	case $OPT in
+	h)
+		usage
+		exit 0
+		;;
+	i)
+		RESULTS=$OPTARG
+		;;
+	esac
+done
+
+if [ -z "$RESULTS" ]; then
+	echo "ERROR: Specify results directory with -i"
+	exit 1
+fi
+
+for TEST in load power; do
+	ts-plot-sar -i $RESULTS/$TEST/sar
+done
+
+ts-plot-queries -i $RESULTS/power/q_time.csv
+
+REPORTPREFIX="report"
+REPORTMD="$RESULTS/${REPORTPREFIX}.md"
+
+README="$RESULTS/readme.txt"
+
+DBMS=`grep DBMS $README | cut -d ":" -f 2`
+SF=`grep "Scale Factor" $README | cut -d ":" -f 2`
+PRODUCTS=`grep Products $README | cut -d ":" -f 2`
+YEARS=`grep Years $README | cut -d ":" -f 2`
+
+LOADTIME=`cat $RESULTS/load/results.txt`
+
+cat << __EOF__ > $REPORTMD
+Touchstone Decision Support System Test Report
+==============================================
+
+Summary
+-------
+
+Database management system: $DBMS
+
+Scale Factor: $SF
+
+Products: $PRODUCTS
+
+Years of data: $YEARS
+
+Metrics
+-------
+
+Load Time: $LOADTIME seconds
+
+![Query Execution Times](power/q_time.png)
+
+Load Test
+---------
+
+### System Statistics
+
+![Processor Utilization](load/sar/sar-cpu.png)
+![Per Processor Utilization](load/sar/sar-per-cpu.png)
+![Block Device Utilization](load/sar/sar-per-blockdev.png)
+![Swapping](load/sar/sar-swapping.png)
+
+Power Test
+----------
+
+### System Statistics
+
+![Processor Utilization](power/sar/sar-cpu.png)
+![Per Processor Utilization](power/sar/sar-per-cpu.png)
+![Block Device Utilization](power/sar/sar-per-blockdev.png)
+![Swapping](power/sar/sar-swapping.png)
+
+__EOF__
+
+which pandoc > /dev/null 2>&1
+if [ $? -ne 0 ]; then
+	echo "WARNING: pandoc not in path, pdf and html reports not created"
+	exit 0
+fi
+
+(cd $RESULTS && pandoc -f markdown -t latex -o "${REPORTPREFIX}.pdf" ${REPORTPREFIX}.md)
+(cd $RESULTS && pandoc -f markdown -t html5 -o "${REPORTPREFIX}.html" ${REPORTPREFIX}.md)
+
+exit 0
