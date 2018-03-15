@@ -44,6 +44,7 @@ PRODUCTS=`grep Products $README | cut -d ":" -f 2`
 YEARS=`grep Years $README | cut -d ":" -f 2`
 
 LOADTIME=`cat $RESULTS/load/results.txt`
+POWER=`cat $RESULTS/power/score.txt`
 
 cat << __EOF__ > $REPORTMD
 Touchstone Decision Support System Test Report
@@ -64,6 +65,8 @@ Metrics
 -------
 
 Load Time: $LOADTIME seconds
+
+Power Score: $POWER
 
 ![Query Execution Times](power/q_time.png)
 

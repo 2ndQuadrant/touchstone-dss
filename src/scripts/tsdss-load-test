@@ -116,19 +116,19 @@ eval tsdss-$DBMS-start $FLAG_DBPARAMS $FLAG_OUTDIR || exit 1
 
 ts-sysstat -o $OUTDIR
 ts-$DBMS-stat -o $OUTDIR
-TIME0=`date +%s`
+TIME0=`date +%s.%N`
 
 tsdss-$DBMS-load-data -C $CHUNKS -i $DATAFILE_PATH $FLAG_OUTDIR \
 		$FLAG_LINUXPERF || exit 1
 
-TIME1=`date +%s`
+TIME1=`date +%s.%N`
 ts-sysstat -o $OUTDIR -s
 ts-$DBMS-stat -o $OUTDIR -s
 
 tsdss-$DBMS-stop || exit 1
 
 LOADTIMEFILE="$OUTDIR/results.txt"
-echo $(( $TIME1 - $TIME0 )) > $LOADTIMEFILE
+echo "$TIME1 - $TIME0" | bc > $LOADTIMEFILE
 echo "Load Test Time: `cat $LOADTIMEFILE` seconds"
 
 echo "Load test complete."

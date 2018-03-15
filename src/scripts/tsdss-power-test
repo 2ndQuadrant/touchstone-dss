@@ -166,7 +166,7 @@ ts-$DBMS-stat -o $OUTDIR
 QTIMEFILE=$OUTDIR/q_time.csv
 echo "query,seconds" > $QTIMEFILE
 
-TIME0=`date +%s`
+TIME0=`date +%s.%N`
 i=1
 while [ $i -le $QUERIES ]; do
 	FILE="$QUERYDIR/q$i-??.sql"
@@ -174,13 +174,13 @@ while [ $i -le $QUERIES ]; do
 	[[ `basename $FILE` =~ q[0-9]-([0-9]+).sql ]]
 	Q=`printf "%d" ${BASH_REMATCH[1]}`
 
-	QTIME0=`date +%s`
+	QTIME0=`date +%s.%N`
 	execute_query $FILE $Q 1
-	QTIME1=`date +%s`
-	echo "$Q,$(( $QTIME1 - $QTIME0 ))" >> $QTIMEFILE
+	QTIME1=`date +%s.%N`
+	echo "$Q,`echo "$QTIME1 - $QTIME0" | bc`" >> $QTIMEFILE
 	i=$(( $i + 1 ))
 done
-TIME1=`date +%s`
+TIME1=`date +%s.%N`
 
 ts-sysstat -o $OUTDIR -s
 ts-$DBMS-stat -o $OUTDIR -s
@@ -188,7 +188,7 @@ ts-$DBMS-stat -o $OUTDIR -s
 tsdss-$DBMS-stop || exit 1
 
 POWERTIMEFILE="$OUTDIR/results.txt"
-echo $(( $TIME1 - $TIME0 )) > $POWERTIMEFILE
+echo "$TIME1 - $TIME0" | bc > $POWERTIMEFILE
 echo "Power Test Time: `cat $POWERTIMEFILE` seconds"
 
 echo "Power test complete."

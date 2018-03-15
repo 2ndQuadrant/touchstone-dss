@@ -38,4 +38,12 @@ for FILE in `find $OUTDIR -name perf-*.data`; do
 	perf script -L -i $FILE > $BASENAME-trace.txt 2>> $BASENAME-output.txt
 done
 
+SF=`grep "Scale Factor:" $OUTDIR/readme.txt | cut -d ":" -f 2`
+
+awk -F "," '\
+BEGIN { product = 1 } \
+NR>1  { product *= $2 } \
+END   { print product^( 1 /(NR - 1)) * 3600 * $SF } \
+' $OUTDIR/power/q_time.csv > $OUTDIR/power/score.txt
+
 exit 0
