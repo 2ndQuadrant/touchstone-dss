@@ -1,7 +1,12 @@
 ADD_SUBDIRECTORY(pgsql)
 
-INSTALL(PROGRAMS tsdss-generate-report DESTINATION "${INSTALLDEST}/bin")
-INSTALL(PROGRAMS tsdss-load-test DESTINATION "${INSTALLDEST}/bin")
-INSTALL(PROGRAMS tsdss-post-process DESTINATION "${INSTALLDEST}/bin")
-INSTALL(PROGRAMS tsdss-power-test DESTINATION "${INSTALLDEST}/bin")
-INSTALL(PROGRAMS tsdss-run-workload DESTINATION "${INSTALLDEST}/bin")
+set(SCRIPTS_DIR ${CMAKE_SOURCE_DIR}/src/scripts)
+set(
+    SCRIPTS_PROGRAMS
+    ${SCRIPTS_DIR}/tsdss-generate-report
+    ${SCRIPTS_DIR}/tsdss-load-test
+    ${SCRIPTS_DIR}/tsdss-post-process
+    ${SCRIPTS_DIR}/tsdss-power-test
+    ${SCRIPTS_DIR}/tsdss-run-workload
+)
+install(PROGRAMS ${SCRIPTS_PROGRAMS} DESTINATION "bin")

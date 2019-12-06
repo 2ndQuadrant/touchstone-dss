@@ -5,48 +5,49 @@
 
 oneTimeSetUp() {
 	export PATH=$PWD/../bin:$PATH
-	export TESTPATH=$PWD
+    export HOMEDIR=`dirname $0`
+    export LD_LIBRARY_PATH="..;/usr/local/lib"
 }
 
 testQuerygenAnalyze() {
-	tsdss-querygen -c $TESTPATH/../../queries/pgsql/pgsql.conf -f pgsql \
-			-i $TESTPATH/../../queries/pgsql -o $SHUNIT_TMPDIR -a
+	tsdss-querygen -c ${HOMEDIR}/../../queries/pgsql/pgsql.conf -f pgsql \
+			-i ${HOMEDIR}/../../queries/pgsql -o $SHUNIT_TMPDIR -a
 	assertEquals "querygen analyze" 0 $?
 }
 
 testQuerygenDBMSpgsql() {
-	tsdss-querygen -c $TESTPATH/../../queries/pgsql/pgsql.conf -f pgsql \
-			-i $TESTPATH/../../queries/pgsql -o $SHUNIT_TMPDIR
+	tsdss-querygen -c ${HOMEDIR}/../../queries/pgsql/pgsql.conf -f pgsql \
+			-i ${HOMEDIR}/../../queries/pgsql -o $SHUNIT_TMPDIR
 	assertEquals "querygen pgsql" 0 $?
 }
 
 testQuerygenPlan() {
-	tsdss-querygen -c $TESTPATH/../../queries/pgsql/pgsql.conf -f pgsql \
-			-i $TESTPATH/../../queries/pgsql -o $SHUNIT_TMPDIR -p
+	tsdss-querygen -c ${HOMEDIR}/../../queries/pgsql/pgsql.conf -f pgsql \
+			-i ${HOMEDIR}/../../queries/pgsql -o $SHUNIT_TMPDIR -p
 	assertEquals "querygen plan" 0 $?
 }
 
 testQuerygenPlanAnalyzeConflict() {
-	tsdss-querygen -c $TESTPATH/../../queries/pgsql/pgsql.conf -f pgsql \
-			-i $TESTPATH/../../queries/pgsql -o $SHUNIT_TMPDIR -a -p
+	tsdss-querygen -c ${HOMEDIR}/../../queries/pgsql/pgsql.conf -f pgsql \
+			-i ${HOMEDIR}/../../queries/pgsql -o $SHUNIT_TMPDIR -a -p
 	assertEquals "querygen plan-analyze conflict" 4 $?
 }
 
 testQuerygenParamFormatUnkown() {
-	tsdss-querygen -c $TESTPATH/../../queries/pgsql/pgsql.conf -f a \
-			-i $TESTPATH/../../queries/pgsql
+	tsdss-querygen -c ${HOMEDIR}/../../queries/pgsql/pgsql.conf -f a \
+			-i ${HOMEDIR}/../../queries/pgsql
 	assertEquals "querygen pgsql" 3 $?
 }
 
 testQuerygenParamIndir() {
-	tsdss-querygen -c $TESTPATH/../../queries/pgsql/pgsql.conf -f pgsql
+	tsdss-querygen -c ${HOMEDIR}/../../queries/pgsql/pgsql.conf -f pgsql
 	assertEquals "querygen indir" 4 $?
 }
 
 testQuerygenParamOutdir() {
 	cd $SHUNIT_TMPDIR
-	tsdss-querygen -c $TESTPATH/../../queries/pgsql/pgsql.conf -f pgsql \
-			-i $TESTPATH/../../queries/pgsql
+	tsdss-querygen -c ${HOMEDIR}/../../queries/pgsql/pgsql.conf -f pgsql \
+			-i ${HOMEDIR}/../../queries/pgsql
 	assertEquals "querygen outdir" 0 $?
 }
 

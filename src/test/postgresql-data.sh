@@ -5,6 +5,7 @@
 
 oneTimeSetUp() {
 	export PATH=$PWD/../bin:$PWD/../scripts:$PWD/../scripts/pgsql:$PATH
+    export LD_LIBRARY_PATH="..;/usr/local/lib"
 
 	export PGUSER="postgres"
 	export PGDATABASE="postgres"

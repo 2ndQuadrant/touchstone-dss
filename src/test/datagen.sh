@@ -10,6 +10,8 @@ TIMEFILE="time.data"
 
 oneTimeSetUp() {
 	export PATH=$PWD/../bin:$PWD/../scripts:$PWD/../scripts/pgsql:$PATH
+    export LD_LIBRARY_PATH="..;/usr/local/lib"
+
 	tsdss-datagen -d $SHUNIT_TMPDIR
 	assertEquals "create all data files" 0 $?
 }
